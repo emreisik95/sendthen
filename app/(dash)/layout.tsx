@@ -1,7 +1,12 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth-user";
 import { getActiveTeam, membershipsOf } from "@/lib/team";
-import { logoutAction, switchTeamAction } from "@/app/actions";
+import { onboardingProgress } from "@/lib/onboarding";
+import {
+  completeOnboardingAction,
+  logoutAction,
+  switchTeamAction,
+} from "@/app/actions";
 import {
   IconBan,
   IconBook,
@@ -45,6 +50,7 @@ export default async function DashLayout({
   const user = await requireUser();
   const { team } = await getActiveTeam(user);
   const memberships = await membershipsOf(user.id);
+  const setup = user.onboardedAt ? null : await onboardingProgress(team);
 
   return (
     <div className="flex min-h-screen">
@@ -102,6 +108,48 @@ export default async function DashLayout({
             </Link>
           ))}
         </nav>
+
+        {/* finish setup */}
+        {setup && (
+          <div className="mx-3 my-2 rounded-lg border border-line bg-surface-2 p-3">
+            <div className="mb-2 flex items-start justify-between gap-2">
+              <p className="text-xs font-medium">Get set up</p>
+              <form action={completeOnboardingAction}>
+                <input type="hidden" name="to" value="/emails" />
+                <button
+                  type="submit"
+                  aria-label="Dismiss setup card"
+                  className="-mr-1 -mt-1 rounded px-1 leading-none text-fg-faint transition-colors hover:text-fg"
+                >
+                  ×
+                </button>
+              </form>
+            </div>
+            <div className="mb-2 flex gap-1">
+              {[setup.hasDomain, setup.hasApiKey, setup.hasSentEmail].map(
+                (done, i) => (
+                  <span
+                    key={i}
+                    className={`h-1 flex-1 rounded-full ${
+                      done ? "bg-lime" : "bg-surface-3"
+                    }`}
+                  />
+                ),
+              )}
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-[10px] text-fg-muted">
+                {setup.stepsDone}/3 complete
+              </span>
+              <Link
+                href="/onboarding"
+                className="inline-flex items-center rounded-md bg-lime px-2 py-1 text-[11px] font-medium text-on-lime transition-colors hover:bg-lime-hover"
+              >
+                Continue →
+              </Link>
+            </div>
+          </div>
+        )}
 
         {/* resources */}
         <div className="border-t border-line px-3 py-2">

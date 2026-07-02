@@ -158,12 +158,22 @@ export default async function EmailsPage({
     "html": "<p>It works.</p>"
   }'`}
             </pre>
-            <Link
-              href="/docs"
-              className="text-sm text-fg-muted underline hover:text-fg"
-            >
-              Read the docs →
-            </Link>
+            <div className="flex items-center justify-center gap-5">
+              {!user.onboardedAt && (
+                <Link
+                  href="/onboarding"
+                  className="text-sm text-fg-muted underline hover:text-fg"
+                >
+                  Take the 2-minute setup tour →
+                </Link>
+              )}
+              <Link
+                href="/docs"
+                className="text-sm text-fg-muted underline hover:text-fg"
+              >
+                Read the docs →
+              </Link>
+            </div>
           </Card>
         )
       ) : (

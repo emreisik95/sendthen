@@ -140,7 +140,77 @@ export async function signupAction(formData: FormData): Promise<void> {
   const user = await registerUser(email, name || email.split("@")[0], password);
   await createUserSession(user.id);
   if (invite) await acceptInviteToken(invite, user.id);
-  redirect("/emails");
+  redirect("/onboarding");
+}
+
+/* ---------- onboarding ---------- */
+
+/** Marks the tour finished (or skipped) — the setup card disappears. */
+export async function completeOnboardingAction(
+  formData: FormData,
+): Promise<void> {
+  const user = await requireUser();
+  await db
+    .update(users)
+    .set({ onboardedAt: new Date() })
+    .where(eq(users.id, user.id));
+  const to = String(formData.get("to") ?? "/emails");
+  // internal paths only: reject absolute and protocol-relative ("//evil.com") URLs
+  redirect(to.startsWith("/") && !to.startsWith("//") ? to : "/emails");
+}
+
+export async function onboardingCreateDomainAction(
+  formData: FormData,
+): Promise<void> {
+  const { user, team } = await activeContext();
+  const name = String(formData.get("name") ?? "")
+    .trim()
+    .toLowerCase();
+  if (!/^(?!-)[a-z0-9-]{1,63}(?<!-)(\.(?!-)[a-z0-9-]{1,63}(?<!-))+$/.test(name)) {
+    redirect("/onboarding?step=domain&error=invalid_domain");
+  }
+  const [existing] = await db
+    .select()
+    .from(domains)
+    .where(eq(domains.name, name));
+  if (existing) {
+    redirect(
+      existing.teamId === team.id
+        ? "/onboarding?step=domain"
+        : "/onboarding?step=domain&error=taken",
+    );
+  }
+  const { privateKey, publicKey } = generateDkimKeyPair();
+  await db.insert(domains).values({
+    id: newDomainId(),
+    userId: user.id,
+    teamId: team.id,
+    name,
+    dkimPrivateKey: privateKey,
+    dkimPublicKey: publicKey,
+    createdAt: new Date(),
+  });
+  redirect("/onboarding?step=domain");
+}
+
+export async function onboardingCreateKeyAction(
+  formData: FormData,
+): Promise<void> {
+  const { user, team } = await activeContext();
+  const name = String(formData.get("name") ?? "").trim() || "my first key";
+  const token = newApiToken();
+  await db.insert(apiKeys).values({
+    id: newApiKeyId(),
+    userId: user.id,
+    teamId: team.id,
+    name,
+    tokenHash: hashToken(token),
+    tokenPrefix: token.slice(0, 12),
+    permission: "full",
+    createdAt: new Date(),
+  });
+  // token is shown exactly once on the send step
+  redirect(`/onboarding?step=send&token=${token}`);
 }
 
 export async function logoutAction(): Promise<void> {

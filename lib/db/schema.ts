@@ -17,6 +17,8 @@ export const users = sqliteTable(
     role: text("role", { enum: ["admin", "member"] })
       .notNull()
       .default("member"),
+    // set when the user finishes or skips the getting-started tour
+    onboardedAt: integer("onboarded_at", { mode: "timestamp_ms" }),
     createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
   },
   (t) => [index("users_email_idx").on(t.email)],
