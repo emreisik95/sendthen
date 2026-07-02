@@ -127,6 +127,18 @@ const { id } = await st.emails.send({ from, to, subject, html });
 
 The package also includes a CLI: `npx sendthen login`, then `npx sendthen send …` and `npx sendthen trace <id>`.
 
+
+### Releasing the SDK
+
+The package publishes itself from CI: bump `sdk/package.json`, tag, push —
+
+```bash
+cd sdk && npm version patch          # bumps to e.g. 0.1.1
+git push && git push --tags          # tag sdk-v0.1.1 triggers the publish workflow
+```
+
+(One-time setup: create an npm Automation token at npmjs.com and add it as the `NPM_TOKEN` repository secret.)
+
 ## Architecture
 
 Next.js App Router (one standalone server) + SQLite via Drizzle. Sends go through an in-process queue — a background worker claims due emails (`queued → sending`), makes up to 3 attempts with backoff, and handles scheduled sends and webhook redelivery. Each message is DKIM-signed with the domain's own 2048-bit key, then handed to the configured transport: sandbox (disk capture), SMTP relay, Amazon SES (raw SigV4 call, no SDK), or direct MX delivery. Inbound arrives via the built-in SMTP listener, SES/SNS, or raw-MIME HTTP ingest.
