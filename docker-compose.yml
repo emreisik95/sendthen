@@ -1,0 +1,20 @@
+services:
+  sendthen:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      # public URL of this instance (needed for open/click tracking + unsubscribe links)
+      SENDTHEN_PUBLIC_URL: ${SENDTHEN_PUBLIC_URL:-http://localhost:3000}
+      # instance-wide default transport: sandbox | smtp | ses | direct
+      SENDTHEN_MAIL_MODE: ${SENDTHEN_MAIL_MODE:-sandbox}
+      SMTP_URL: ${SMTP_URL:-}
+      # set to "true" to block public signups after the first (admin) account
+      DISABLE_SIGNUP: ${DISABLE_SIGNUP:-false}
+      AUTH_SECRET: ${AUTH_SECRET:-}
+    volumes:
+      - sendthen-data:/data
+    restart: unless-stopped
+
+volumes:
+  sendthen-data:

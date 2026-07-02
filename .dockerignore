@@ -1,0 +1,8 @@
+node_modules
+.next
+data
+.test-tmp
+.git
+.env*
+Dockerfile
+captain-definition

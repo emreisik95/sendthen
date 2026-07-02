@@ -1,0 +1,77 @@
+import { desc, eq } from "drizzle-orm";
+import { db, suppressions } from "@/lib/db";
+import { requireUser } from "@/lib/auth-user";
+import {
+  addSuppressionAction,
+  removeSuppressionAction,
+} from "@/app/actions";
+import {
+  Card,
+  Empty,
+  PageHeader,
+  btnDanger,
+  btnPrimary,
+  fmtDate,
+  inputCls,
+} from "@/components/ui";
+
+export const dynamic = "force-dynamic";
+
+export default async function SuppressionsPage() {
+  const user = await requireUser();
+  const rows = await db
+    .select()
+    .from(suppressions)
+    .where(eq(suppressions.userId, user.id))
+    .orderBy(desc(suppressions.createdAt))
+    .limit(200);
+
+  return (
+    <div className="mx-auto max-w-3xl">
+      <PageHeader title="Suppressions" />
+      <p className="mb-6 text-sm text-fg-muted">
+        Addresses here never receive email from you. Hard bounces and
+        complaints are added automatically.
+      </p>
+
+      <form action={addSuppressionAction} className="mb-6 flex gap-2">
+        <input
+          name="email"
+          type="email"
+          placeholder="blocked@example.com"
+          required
+          className={`${inputCls} max-w-sm font-mono`}
+        />
+        <button type="submit" className={btnPrimary}>
+          Suppress
+        </button>
+      </form>
+
+      {rows.length === 0 ? (
+        <Empty>No suppressed addresses.</Empty>
+      ) : (
+        <Card className="divide-y divide-hairline">
+          {rows.map((s) => (
+            <div
+              key={s.id}
+              className="flex items-center justify-between gap-3 px-4 py-3"
+            >
+              <span className="min-w-0 flex-1 truncate font-mono text-sm">
+                {s.email}
+              </span>
+              <span className="font-mono text-xs text-fg-faint">
+                {s.reason} · {fmtDate(s.createdAt)}
+              </span>
+              <form action={removeSuppressionAction}>
+                <input type="hidden" name="id" value={s.id} />
+                <button type="submit" className={btnDanger}>
+                  Remove
+                </button>
+              </form>
+            </div>
+          ))}
+        </Card>
+      )}
+    </div>
+  );
+}
