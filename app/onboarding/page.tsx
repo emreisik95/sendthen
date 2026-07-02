@@ -254,11 +254,28 @@ function DomainStep({
               domain.name,
               domain.dkimSelector,
               domain.dkimPublicKey,
-            ).map((r) => (
-              <Card key={r.name} className="p-4">
-                <p className="mb-2 text-xs font-medium uppercase tracking-wider text-fg-faint">
-                  {r.purpose} · {r.type}
-                </p>
+            ).map((r) => {
+              const recordOk =
+                r.purpose === "dkim" ? domain.dkimVerified : domain.spfVerified;
+              return (
+              <Card
+                key={r.name}
+                className={`p-4 ${recordOk ? "border-lime/50 bg-lime/5" : ""}`}
+              >
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="text-xs font-medium uppercase tracking-wider text-fg-faint">
+                    {r.purpose} · {r.type}
+                  </p>
+                  {recordOk ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-lime/15 px-2 py-0.5 font-mono text-[11px] text-lime">
+                      ✓ verified
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-warn/15 px-2 py-0.5 font-mono text-[11px] text-warn">
+                      ○ waiting
+                    </span>
+                  )}
+                </div>
                 <div className="mb-1 flex items-center gap-2">
                   <span className="w-14 shrink-0 font-mono text-[10px] uppercase tracking-wider text-fg-faint">
                     Host
@@ -277,12 +294,15 @@ function DomainStep({
                   </code>
                   <CopyButton value={r.value} />
                 </div>
-                <p className="mt-2 text-[11px] text-fg-faint">
-                  Create a <b>TXT</b> record at your DNS provider — Host goes
-                  in the name field, Value in the content field.
-                </p>
+                {!recordOk && (
+                  <p className="mt-2 text-[11px] text-fg-faint">
+                    Create a <b>TXT</b> record at your DNS provider — Host goes
+                    in the name field, Value in the content field.
+                  </p>
+                )}
               </Card>
-            ))}
+              );
+            })}
           </div>
           {verified ? (
             <p className="mb-4 flex items-center gap-2 text-sm text-lime">

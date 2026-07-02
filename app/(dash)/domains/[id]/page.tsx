@@ -74,7 +74,10 @@ export default async function DomainDetailPage({
           const verified =
             r.purpose === "dkim" ? domain.dkimVerified : domain.spfVerified;
           return (
-            <Card key={r.name} className="p-4">
+            <Card
+              key={r.name}
+              className={`p-4 ${verified ? "border-lime/50 bg-lime/5" : ""}`}
+            >
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-xs font-medium uppercase tracking-wider text-fg-faint">
                   {r.purpose} · {r.type}

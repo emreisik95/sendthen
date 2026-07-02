@@ -43,11 +43,14 @@ export function LiveVerify({
       });
       if (res.ok) {
         const json = (await res.json()) as CheckResult;
-        setLast(json);
-        if (json.verified) {
-          router.refresh();
-          return;
-        }
+        setLast((prev) => {
+          // per-record state changed → re-render the server cards too
+          if (!prev || prev.dkim !== json.dkim || prev.spf !== json.spf) {
+            router.refresh();
+          }
+          return json;
+        });
+        if (json.verified) return;
       }
     } catch {
       // transient network error — next tick retries
