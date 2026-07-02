@@ -76,6 +76,38 @@ export function Empty({ children }: { children: ReactNode }) {
   );
 }
 
+/** Rich empty state: icon, what this page is for, and a next step. */
+export function EmptyState({
+  icon,
+  title,
+  description,
+  children,
+}: {
+  icon?: ReactNode;
+  title: string;
+  description: string;
+  children?: ReactNode;
+}) {
+  return (
+    <Card className="px-6 py-16 text-center">
+      {icon && (
+        <div className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-lg border border-line bg-surface-2 text-fg-faint">
+          {icon}
+        </div>
+      )}
+      <p className="mb-2 text-sm font-medium text-fg">{title}</p>
+      <p className="mx-auto mb-6 max-w-md text-sm leading-relaxed text-fg-muted">
+        {description}
+      </p>
+      {children && (
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          {children}
+        </div>
+      )}
+    </Card>
+  );
+}
+
 export const inputCls =
   "w-full rounded-md border border-line bg-surface px-3 py-2 text-sm text-fg placeholder:text-fg-faint focus:border-lime";
 

@@ -12,6 +12,8 @@
 
 [Live demo](https://sendthen.external.emre.zip) · [Docs](https://sendthen.external.emre.zip/docs) · [Report a bug](https://github.com/emreisik95/sendthen/issues)
 
+![sendthen dashboard — emails](.github/screenshots/emails.png)
+
 </div>
 
 ## Why sendthen
@@ -27,6 +29,20 @@ Email APIs are great until you're renting your own sending reputation back at pe
 - **Inbound** — receive mail for your verified domains three ways: built-in SMTP listener (point your MX at the instance), Amazon SES receiving via SNS, or raw-MIME HTTP ingest (works behind Cloudflare Email Workers or any relay). Inbox in the dashboard with one-click forwarding.
 - **Teams & access** — multi-team workspaces with owner/member roles and invite links; scoped API keys (`emails.send`, `domains.manage`, …); first signup becomes instance admin, `DISABLE_SIGNUP=true` locks the instance after that.
 - **Observability** — full email lifecycle events (`queued → sent → delivered / bounced / failed`), svix-compatible HMAC webhooks with up to 5 backoff-spaced delivery attempts and a delivery log, signed open/click tracking, daily volume and delivery/open/click analytics.
+
+## Screenshots
+
+| Landing | Metrics |
+|---|---|
+| ![landing](.github/screenshots/landing.png) | ![metrics](.github/screenshots/metrics.png) |
+
+| Template builder | Domain verification |
+|---|---|
+| ![template builder](.github/screenshots/builder.png) | ![domain DNS records](.github/screenshots/domain.png) |
+
+| Inbound detail | |
+|---|---|
+| ![inbound email](.github/screenshots/inbound.png) | |
 
 ## Quick start
 

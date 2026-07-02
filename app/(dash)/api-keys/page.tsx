@@ -7,13 +7,14 @@ import { SCOPES, scopesOf } from "@/lib/api-auth";
 import { ScopePicker } from "@/components/api-keys/scope-picker";
 import {
   Card,
-  Empty,
+  EmptyState,
   PageHeader,
   btnDanger,
   btnPrimary,
   fmtDate,
   inputCls,
 } from "@/components/ui";
+import { IconKey } from "@/components/nav-icons";
 import { CopyButton } from "@/components/copy-button";
 
 export const dynamic = "force-dynamic";
@@ -68,7 +69,18 @@ export default async function ApiKeysPage({
       </form>
 
       {rows.length === 0 ? (
-        <Empty>No API keys. Create one to start sending.</Empty>
+        <EmptyState
+          icon={<IconKey />}
+          title="No API keys yet."
+          description="API keys are bearer tokens your apps use to call the sending API. Scope each key to just what it needs — the full token is shown only once, right after creation. Name your first key above to get started."
+        >
+          <a
+            href="/docs#api-keys"
+            className="text-sm text-fg-muted underline hover:text-fg"
+          >
+            API key docs →
+          </a>
+        </EmptyState>
       ) : (
         <Card className="divide-y divide-hairline">
           {rows.map((k) => (

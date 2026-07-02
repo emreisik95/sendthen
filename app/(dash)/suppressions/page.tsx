@@ -8,13 +8,14 @@ import {
 } from "@/app/actions";
 import {
   Card,
-  Empty,
+  EmptyState,
   PageHeader,
   btnDanger,
   btnPrimary,
   fmtDate,
   inputCls,
 } from "@/components/ui";
+import { IconBan } from "@/components/nav-icons";
 
 export const dynamic = "force-dynamic";
 
@@ -50,7 +51,18 @@ export default async function SuppressionsPage() {
       </form>
 
       {rows.length === 0 ? (
-        <Empty>No suppressed addresses.</Empty>
+        <EmptyState
+          icon={<IconBan />}
+          title="Suppression list is empty — that's good."
+          description="Hard bounces and spam complaints land here automatically so those addresses are never emailed again. You can also block an address manually with the form above."
+        >
+          <a
+            href="/docs#suppressions"
+            className="text-sm text-fg-muted underline hover:text-fg"
+          >
+            Suppression docs →
+          </a>
+        </EmptyState>
       ) : (
         <Card className="divide-y divide-hairline">
           {rows.map((s) => (

@@ -9,7 +9,7 @@ import {
 } from "@/app/actions";
 import {
   Card,
-  Empty,
+  EmptyState,
   PageHeader,
   StatusPill,
   btnDanger,
@@ -18,6 +18,7 @@ import {
   fmtDate,
   inputCls,
 } from "@/components/ui";
+import { IconWebhook } from "@/components/nav-icons";
 import { CopyButton } from "@/components/copy-button";
 import { EventPicker } from "@/components/webhooks/event-picker";
 
@@ -66,7 +67,18 @@ export default async function WebhooksPage() {
       </form>
 
       {rows.length === 0 ? (
-        <Empty>No webhooks. Add one to receive email events.</Empty>
+        <EmptyState
+          icon={<IconWebhook />}
+          title="No webhooks yet."
+          description="Webhooks push email events — delivered, bounced, opened, clicked — to your endpoint as HMAC-signed JSON, with automatic retries on failure. Add your endpoint URL above and pick the events you care about."
+        >
+          <a
+            href="/docs#webhooks"
+            className="text-sm text-fg-muted underline hover:text-fg"
+          >
+            Webhook docs →
+          </a>
+        </EmptyState>
       ) : (
         <Card className="mb-8 divide-y divide-hairline">
           {rows.map((h) => (

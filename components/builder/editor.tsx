@@ -23,6 +23,7 @@ import {
   type TextBlock,
 } from "@/lib/template-builder/types";
 import { btnPrimary, btnSecondary, inputCls } from "@/components/ui";
+import { Select } from "@/components/select";
 
 /* ------------------------------------------------------------------ */
 /* Props & shared types                                                */
@@ -99,6 +100,11 @@ const SOCIAL_LABELS: Record<SocialKind, string> = {
   instagram: "Instagram",
   website: "Website",
 };
+
+/** Shorten a preset description for use as a compact option hint. */
+function truncateHint(text: string, max = 32): string {
+  return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
+}
 
 /** True when the event target is a form field the user is typing in. */
 function isFormField(target: EventTarget | null): boolean {
@@ -783,20 +789,19 @@ function SocialEditor({
       {block.links.map((link, i) => (
         <div key={i} className="space-y-2 rounded-md border border-line p-3">
           <div className="flex items-center gap-2">
-            <select
-              aria-label={`Link ${i + 1} network`}
-              className={inputCls}
-              value={link.kind}
-              onChange={(e) =>
-                setLink(i, { ...link, kind: e.target.value as SocialKind })
-              }
-            >
-              {SOCIAL_KINDS.map((k) => (
-                <option key={k} value={k}>
-                  {SOCIAL_LABELS[k]}
-                </option>
-              ))}
-            </select>
+            <Select
+              // Uncontrolled — remount if the kind changes externally
+              // (undo/redo) so the visible label stays in sync.
+              key={link.kind}
+              ariaLabel={`Link ${i + 1} network`}
+              className="min-w-0 flex-1"
+              defaultValue={link.kind}
+              options={SOCIAL_KINDS.map((k) => ({
+                value: k,
+                label: SOCIAL_LABELS[k],
+              }))}
+              onValueChange={(v) => setLink(i, { ...link, kind: v as SocialKind })}
+            />
             <button
               type="button"
               title="Remove link"
@@ -996,18 +1001,17 @@ function GlobalInspector({
         onChange={(v) => onChange({ contentWidth: v })}
       />
       <Field label="Font family">
-        <select
-          className={inputCls}
-          value={styles.fontFamily}
-          onChange={(e) => onChange({ fontFamily: e.target.value })}
-        >
-          {!knownFont ? <option value={styles.fontFamily}>Custom</option> : null}
-          {FONT_STACKS.map((f) => (
-            <option key={f.label} value={f.value}>
-              {f.label}
-            </option>
-          ))}
-        </select>
+        <Select
+          // Select is uncontrolled — remount when the value changes
+          // externally (e.g. undo/redo or preset apply) to stay in sync.
+          key={styles.fontFamily}
+          defaultValue={styles.fontFamily}
+          options={[
+            ...(!knownFont ? [{ value: styles.fontFamily, label: "Custom" }] : []),
+            ...FONT_STACKS.map((f) => ({ value: f.value, label: f.label })),
+          ]}
+          onValueChange={(v) => onChange({ fontFamily: v })}
+        />
       </Field>
 
       <div className="border-t border-line pt-3">
@@ -1156,6 +1160,8 @@ export function Editor({ initial, presets }: EditorProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dropIndex, setDropIndex] = useState<number | null>(null);
   const [insertMenuAt, setInsertMenuAt] = useState<number | null>(null);
+  /** Bumped on every preset pick to remount (reset) the preset Select. */
+  const [presetPickCount, setPresetPickCount] = useState(0);
 
   /** Set right before an intentional navigation to suppress beforeunload. */
   const bypassGuard = useRef(false);
@@ -1412,29 +1418,28 @@ export function Editor({ initial, presets }: EditorProps) {
   const cardWidth = Math.min(styles.contentWidth, canvasWidth);
   const canUndo = past.length > 0;
   const canRedo = future.length > 0;
-  const compactInput = `${inputCls} h-8 py-1`;
+  // no w-full here — these live in a nowrap flex row
+  const barInput =
+    "rounded-md border border-line bg-surface px-3 py-1.5 text-sm text-fg placeholder:text-fg-faint focus:border-lime";
 
   return (
     <div className="flex h-dvh flex-col bg-bg text-fg">
       {/* ---------------- Top bar ---------------- */}
-      <header className="flex h-14 shrink-0 items-center gap-3 border-b border-line bg-surface px-3">
-        {/* left: cancel */}
+      <header className="flex shrink-0 flex-wrap items-center gap-2 border-b border-line bg-surface px-3 py-2 min-[900px]:h-14 min-[900px]:flex-nowrap min-[900px]:py-0">
+        {/* left: cancel · name · subject */}
         <a
           href="/templates"
           onClick={handleCancelClick}
-          className="flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg"
+          className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-2 py-1.5 text-sm text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg"
         >
           <span aria-hidden>←</span>
           Templates
         </a>
 
-        <div aria-hidden className="h-6 w-px shrink-0 bg-line" />
-
-        {/* center: name + subject */}
         <input
           type="text"
           aria-label="Template name"
-          className={`${compactInput} max-w-48`}
+          className={`${barInput} w-36 shrink-0`}
           value={name}
           placeholder="Template name"
           onChange={(e) => {
@@ -1445,7 +1450,7 @@ export function Editor({ initial, presets }: EditorProps) {
         <input
           type="text"
           aria-label="Email subject"
-          className={`${compactInput} max-w-md flex-1`}
+          className={`${barInput} min-w-0 flex-1`}
           value={subject}
           placeholder="Email subject — supports {{variables}}"
           onChange={(e) => {
@@ -1454,35 +1459,36 @@ export function Editor({ initial, presets }: EditorProps) {
           }}
         />
 
-        {/* right: preset, undo/redo, device, test, save */}
+        {/* right: preset · undo/redo · device · test · save */}
         <div className="ml-auto flex shrink-0 items-center gap-2">
-          <select
-            aria-label="Apply preset"
-            className={`${compactInput} w-40`}
-            value=""
-            onChange={(e) => {
-              if (e.target.value) applyPreset(e.target.value);
-              e.target.value = "";
+          <Select
+            // Remount after every pick so the trigger returns to the
+            // placeholder — this is an action menu, not a value holder, and
+            // a cancelled dirty-confirm must not leave a preset shown as
+            // "selected".
+            key={presetPickCount}
+            ariaLabel="Apply preset"
+            placeholder="Apply preset…"
+            className="w-44"
+            options={presets.map((p) => ({
+              value: p.key,
+              label: p.name,
+              hint: truncateHint(p.description),
+            }))}
+            onValueChange={(key) => {
+              setPresetPickCount((n) => n + 1);
+              applyPreset(key);
             }}
-          >
-            <option value="" disabled>
-              Apply preset…
-            </option>
-            {presets.map((p) => (
-              <option key={p.key} value={p.key} title={p.description}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+          />
 
-          <div className="inline-flex overflow-hidden rounded-md border border-line">
+          <div className="flex overflow-hidden rounded-md border border-line">
             <button
               type="button"
               title="Undo (⌘Z)"
               aria-label="Undo"
               disabled={!canUndo}
               onClick={undo}
-              className="px-2.5 py-1.5 text-sm text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg disabled:cursor-not-allowed disabled:opacity-30"
+              className="px-2.5 py-1.5 text-sm leading-none text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg disabled:cursor-not-allowed disabled:opacity-30"
             >
               ↩
             </button>
@@ -1492,21 +1498,42 @@ export function Editor({ initial, presets }: EditorProps) {
               aria-label="Redo"
               disabled={!canRedo}
               onClick={redo}
-              className="border-l border-line px-2.5 py-1.5 text-sm text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg disabled:cursor-not-allowed disabled:opacity-30"
+              className="border-l border-line px-2.5 py-1.5 text-sm leading-none text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg disabled:cursor-not-allowed disabled:opacity-30"
             >
               ↪
             </button>
           </div>
 
-          <Segmented<Device>
-            ariaLabel="Preview device"
-            value={device}
-            onChange={setDevice}
-            options={[
-              { value: "desktop", label: "Desktop" },
-              { value: "mobile", label: "Mobile" },
-            ]}
-          />
+          <div
+            role="group"
+            aria-label="Preview device"
+            className="flex overflow-hidden rounded-md border border-line"
+          >
+            <button
+              type="button"
+              aria-pressed={device === "desktop"}
+              onClick={() => setDevice("desktop")}
+              className={`whitespace-nowrap px-3 py-1.5 text-xs transition-colors ${
+                device === "desktop"
+                  ? "bg-lime text-on-lime"
+                  : "text-fg-muted hover:bg-surface-2 hover:text-fg"
+              }`}
+            >
+              Desktop
+            </button>
+            <button
+              type="button"
+              aria-pressed={device === "mobile"}
+              onClick={() => setDevice("mobile")}
+              className={`whitespace-nowrap border-l border-line px-3 py-1.5 text-xs transition-colors ${
+                device === "mobile"
+                  ? "bg-lime text-on-lime"
+                  : "text-fg-muted hover:bg-surface-2 hover:text-fg"
+              }`}
+            >
+              Mobile
+            </button>
+          </div>
 
           {error ? (
             <p role="alert" className="max-w-52 truncate text-xs text-danger" title={error}>
@@ -1516,7 +1543,7 @@ export function Editor({ initial, presets }: EditorProps) {
 
           <button
             type="button"
-            className={`${btnSecondary} h-8 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50`}
+            className={`${btnSecondary} whitespace-nowrap px-3 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-50`}
             disabled={testSend.kind === "sending"}
             onClick={() => void handleTestSend()}
           >
@@ -1524,7 +1551,7 @@ export function Editor({ initial, presets }: EditorProps) {
           </button>
           <button
             type="button"
-            className={`${btnPrimary} h-8 px-3.5 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-60`}
+            className={`${btnPrimary} whitespace-nowrap px-4 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-60`}
             disabled={saving}
             onClick={() => void handleSave()}
           >

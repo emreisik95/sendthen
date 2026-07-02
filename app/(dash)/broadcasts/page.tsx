@@ -19,6 +19,7 @@ import {
   inputCls,
 } from "@/components/ui";
 import { IconBroadcast } from "@/components/nav-icons";
+import { Select } from "@/components/select";
 
 export const dynamic = "force-dynamic";
 
@@ -133,17 +134,15 @@ export default async function BroadcastsPage({
                   <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-fg-faint">
                     Audience
                   </label>
-                  <select
+                  <Select
                     name="audienceId"
-                    className="w-full rounded-md border border-line bg-surface px-3 py-2 text-sm text-fg"
-                  >
-                    {myAudiences.map(({ audience, contactCount }) => (
-                      <option key={audience.id} value={audience.id}>
-                        {audience.name} · {contactCount} contact
-                        {contactCount === 1 ? "" : "s"}
-                      </option>
-                    ))}
-                  </select>
+                    defaultValue={myAudiences[0]?.audience.id}
+                    options={myAudiences.map(({ audience, contactCount }) => ({
+                      value: audience.id,
+                      label: audience.name,
+                      hint: `${contactCount} contact${contactCount === 1 ? "" : "s"}`,
+                    }))}
+                  />
                 </div>
                 <div>
                   <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-fg-faint">

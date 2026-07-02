@@ -6,12 +6,13 @@ import { getActiveTeam } from "@/lib/team";
 import { createAudienceAction } from "@/app/actions";
 import {
   Card,
-  Empty,
+  EmptyState,
   PageHeader,
   btnPrimary,
   fmtDate,
   inputCls,
 } from "@/components/ui";
+import { IconUsers } from "@/components/nav-icons";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +33,15 @@ export default async function AudiencesPage() {
   return (
     <div className="mx-auto max-w-3xl">
       <PageHeader title="Audiences" />
+      <p className="mb-6 text-sm text-fg-muted">
+        An audience is a named list of contacts — the people a{" "}
+        <Link href="/broadcasts" className="text-lime hover:underline">
+          broadcast
+        </Link>{" "}
+        goes to. Contacts can unsubscribe themselves with one click; sendthen
+        skips them automatically.
+      </p>
+
       <form action={createAudienceAction} className="mb-6 flex gap-2">
         <input
           name="name"
@@ -45,7 +55,18 @@ export default async function AudiencesPage() {
       </form>
 
       {rows.length === 0 ? (
-        <Empty>No audiences. Create one to collect contacts.</Empty>
+        <EmptyState
+          icon={<IconUsers />}
+          title="No audiences yet."
+          description="Create one above — “newsletter” or “customers” are good first names — then add contacts by hand, or push them from your app with the API. Once an audience has people in it, you can write a broadcast."
+        >
+          <Link
+            href="/docs#audiences"
+            className="rounded-md border border-line px-4 py-2 text-sm text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg"
+          >
+            How audiences work →
+          </Link>
+        </EmptyState>
       ) : (
         <Card className="divide-y divide-hairline">
           {rows.map(({ audience, contactCount }) => (
@@ -54,9 +75,25 @@ export default async function AudiencesPage() {
               href={`/audiences/${audience.id}`}
               className="flex items-center justify-between px-4 py-3 transition-colors hover:bg-surface-2"
             >
-              <span className="text-sm">{audience.name}</span>
+              <span className="flex min-w-0 items-center gap-3">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-surface-2 text-fg-faint">
+                  <IconUsers width={14} height={14} />
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate text-sm">{audience.name}</span>
+                  <span className="block font-mono text-xs text-fg-faint">
+                    {audience.id}
+                  </span>
+                </span>
+              </span>
               <span className="flex items-center gap-4 font-mono text-xs text-fg-faint">
-                <span>{contactCount} contacts</span>
+                <span
+                  className={
+                    contactCount > 0 ? "text-fg-muted" : "text-fg-faint"
+                  }
+                >
+                  {contactCount} contact{contactCount === 1 ? "" : "s"}
+                </span>
                 <span>{fmtDate(audience.createdAt)}</span>
               </span>
             </Link>

@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { Card, PageHeader, btnPrimary, inputCls } from "@/components/ui";
 import { CopyButton } from "@/components/copy-button";
+import { Select } from "@/components/select";
 import { SES_REGIONS, type SettingsFormProps, type SecretState } from "./props";
 
 type MailMode = SettingsFormProps["initial"]["mailMode"];
@@ -217,21 +218,16 @@ export function SettingsForm(props: SettingsFormProps) {
           {mode === "ses" ? (
             <div className="mt-5 space-y-4 border-t border-line pt-5">
               <div className="space-y-1.5">
-                <label htmlFor="ses-region" className="block text-sm text-fg">
-                  Region
-                </label>
-                <select
-                  id="ses-region"
+                <span className="block text-sm text-fg">Region</span>
+                <Select
+                  ariaLabel="Region"
                   name="sesRegion"
                   defaultValue={props.initial.sesRegion || "eu-west-1"}
-                  className={inputCls}
-                >
-                  {SES_REGIONS.map((region) => (
-                    <option key={region} value={region}>
-                      {region}
-                    </option>
-                  ))}
-                </select>
+                  options={SES_REGIONS.map((region) => ({
+                    value: region,
+                    label: region,
+                  }))}
+                />
               </div>
 
               <div className="space-y-1.5">

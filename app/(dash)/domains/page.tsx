@@ -6,13 +6,14 @@ import { getActiveTeam } from "@/lib/team";
 import { createDomainAction } from "@/app/actions";
 import {
   Card,
-  Empty,
+  EmptyState,
   PageHeader,
   StatusPill,
   btnPrimary,
   fmtDate,
   inputCls,
 } from "@/components/ui";
+import { IconGlobe } from "@/components/nav-icons";
 import { LiveVerify } from "@/components/domains/live-verify";
 
 export const dynamic = "force-dynamic";
@@ -43,9 +44,18 @@ export default async function DomainsPage() {
       </form>
 
       {rows.length === 0 ? (
-        <Empty>
-          Add a sending domain to get DKIM + SPF records for deliverability.
-        </Empty>
+        <EmptyState
+          icon={<IconGlobe />}
+          title="No domains yet."
+          description="Add a domain to get its DKIM and SPF DNS records — publish them and verify to prove you own the domain. Sending outside sandbox mode requires a verified domain. Start by adding your sending domain above."
+        >
+          <a
+            href="/docs#domains"
+            className="text-sm text-fg-muted underline hover:text-fg"
+          >
+            Domain docs →
+          </a>
+        </EmptyState>
       ) : (
         <Card className="divide-y divide-hairline">
           {rows.map((d) => (

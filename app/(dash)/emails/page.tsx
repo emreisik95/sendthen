@@ -11,6 +11,7 @@ import {
   inputCls,
   btnSecondary,
 } from "@/components/ui";
+import { Select } from "@/components/select";
 import { EmailTabs } from "./tabs";
 
 export const dynamic = "force-dynamic";
@@ -92,18 +93,16 @@ export default async function EmailsPage({
       <EmailTabs active="sending" unread={unreadCount} />
 
       <form method="get" className="mb-4 flex flex-wrap items-center gap-2">
-        <select
+        <Select
           name="status"
+          submitOnChange
           defaultValue={status ?? ""}
-          className={`${inputCls} w-auto`}
-        >
-          <option value="">All statuses</option>
-          {STATUS_FILTERS.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
+          className="w-44"
+          options={[
+            { value: "", label: "All statuses" },
+            ...STATUS_FILTERS.map((s) => ({ value: s, label: s })),
+          ]}
+        />
         <input
           type="search"
           name="q"
