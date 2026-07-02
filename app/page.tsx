@@ -6,7 +6,7 @@ import { CodeTabs } from "@/components/landing/code-tabs";
 const FEATURES = [
   {
     title: "Bring your own pipes",
-    body: "Amazon SES, any SMTP relay, direct-to-MX, or a zero-network sandbox — per account, switchable in Settings. SES runs on signed HTTP, no SDK.",
+    body: "Amazon SES, any SMTP relay, direct-to-MX, or a zero-network sandbox — per team, switchable in Settings. SES runs on signed HTTP, no SDK.",
   },
   {
     title: "Tuned for the inbox",
@@ -14,20 +14,67 @@ const FEATURES = [
   },
   {
     title: "Opens, clicks, webhooks",
-    body: "Signed tracking pixel and link redirects, svix-compatible HMAC webhooks retried 5× with backoff — every event lands where you want it.",
+    body: "Signed tracking pixel and link redirects, svix-compatible HMAC webhooks with up to 5 delivery attempts and backoff — nine event types, delivered and logged.",
   },
   {
     title: "Broadcasts & templates",
-    body: "Audiences, per-contact {{variables}}, one-click unsubscribe, reusable templates, batch sends of 100 — the marketing side, self-hosted too.",
+    body: "Audiences, per-contact {{variables}}, RFC 8058 one-click unsubscribe, reusable templates, batch and scheduled sends — the marketing side, self-hosted too.",
+  },
+  {
+    title: "Inbound too",
+    body: "Receive mail on your domains via MX, SES, or HTTP ingest. Read parsed messages in the dashboard and forward them anywhere.",
+  },
+  {
+    title: "A no-code studio",
+    body: "A visual template builder with 12 blocks and starter presets. Designs stay re-editable and compile to bulletproof table HTML.",
   },
 ];
 
 const FACTS = [
-  ["4", "mail providers"],
-  ["2048-bit", "DKIM keys"],
-  ["9", "event types"],
-  ["1", "SQLite file"],
+  ["4", "transports"],
+  ["12", "builder blocks"],
+  ["8", "API scopes"],
+  ["9", "webhook events"],
 ];
+
+const CHECKLIST = [
+  "teams & invites",
+  "scoped API keys",
+  "batch sending",
+  "scheduled sends",
+  "idempotency keys",
+  "attachments",
+  "templates + variables",
+  "broadcasts + one-click unsubscribe",
+  "suppression list",
+  "SES / SMTP / direct / sandbox",
+  "open & click tracking",
+  "svix-compatible webhooks",
+  "inbound email + forwarding",
+  "analytics",
+  "one SQLite file",
+];
+
+const QUICKSTART = `git clone https://github.com/emreisik95/sendthen && cd sendthen
+docker compose up -d
+# open http://localhost:3000 → create the admin account`;
+
+const GITHUB_URL = "https://github.com/emreisik95/sendthen";
+
+function GitHubMark({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width="16"
+      height="16"
+      fill="currentColor"
+      aria-hidden
+      className={className}
+    >
+      <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z" />
+    </svg>
+  );
+}
 
 export default function Landing() {
   return (
@@ -67,6 +114,15 @@ export default function Landing() {
             >
               Docs
             </Link>
+            <a
+              href={GITHUB_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-3 py-2 text-sm text-fg-muted transition-colors hover:text-fg"
+            >
+              <GitHubMark />
+              GitHub
+            </a>
             <Link href="/login" className={btnSecondary}>
               Sign in
             </Link>
@@ -106,6 +162,12 @@ export default function Landing() {
               Read the docs
             </Link>
           </div>
+          <p
+            className="st-up mt-5 font-mono text-xs text-fg-faint"
+            style={{ animationDelay: "0.42s" }}
+          >
+            docker compose up -d · MIT licensed · your data stays yours
+          </p>
 
           {/* signature: live delivery trace */}
           <div
@@ -146,7 +208,7 @@ export default function Landing() {
             Every message,{" "}
             <span className="text-lime">routed &amp; delivered.</span>
           </h2>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map((f) => (
               <div
                 key={f.title}
@@ -160,6 +222,62 @@ export default function Landing() {
                 </p>
               </div>
             ))}
+          </div>
+        </section>
+
+        {/* everything in the box */}
+        <section className="pb-24">
+          <h2 className="mb-8 text-center text-[28px] font-semibold tracking-tight">
+            Everything in <span className="text-lime">the box.</span>
+          </h2>
+          <ul className="mx-auto grid max-w-3xl gap-x-8 gap-y-2.5 sm:grid-cols-2 lg:grid-cols-3">
+            {CHECKLIST.map((item) => (
+              <li
+                key={item}
+                className="flex items-baseline gap-2 font-mono text-[13px] text-fg-muted"
+              >
+                <span aria-hidden className="text-lime">
+                  ✓
+                </span>
+                {item}
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        {/* self-host */}
+        <section className="pb-24">
+          <h2 className="mb-6 text-center text-[28px] font-semibold tracking-tight">
+            Self-host in <span className="text-lime">a minute.</span>
+          </h2>
+          <div className="mx-auto max-w-2xl overflow-hidden rounded-[14px] border border-line bg-surface-3">
+            <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
+              <span className="font-mono text-xs text-fg-faint">
+                quickstart.sh
+              </span>
+              <span className="font-mono text-xs text-lime">3 lines</span>
+            </div>
+            <pre className="overflow-x-auto p-5 font-mono text-[13px] leading-relaxed text-fg-muted">
+              {QUICKSTART}
+            </pre>
+          </div>
+          <p className="mx-auto mt-5 max-w-md text-center text-sm text-fg-muted">
+            One container, one SQLite file — back it up with a copy, move it
+            with a scp.
+          </p>
+          <div className="mt-6 flex items-center justify-center gap-3">
+            <Link href="/docs" className={btnSecondary}>
+              Read the docs
+            </Link>
+            <a
+              href={GITHUB_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={btnSecondary}
+            >
+              <GitHubMark />
+              Star on GitHub
+            </a>
           </div>
         </section>
 
@@ -193,7 +311,29 @@ export default function Landing() {
           <span className="font-mono">
             send<span className="text-lime">then</span> — email for developers
           </span>
-          <span className="font-mono">self-hosted · MIT</span>
+          <span className="flex items-center gap-1.5 font-mono">
+            <a
+              href={GITHUB_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-colors hover:text-fg"
+            >
+              GitHub
+            </a>
+            <span aria-hidden>·</span>
+            <Link href="/docs" className="transition-colors hover:text-fg">
+              Docs
+            </Link>
+            <span aria-hidden>·</span>
+            <a
+              href={`${GITHUB_URL}/blob/main/LICENSE`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-colors hover:text-fg"
+            >
+              MIT
+            </a>
+          </span>
         </footer>
       </div>
     </main>

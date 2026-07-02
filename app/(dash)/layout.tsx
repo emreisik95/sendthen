@@ -4,13 +4,16 @@ import { getActiveTeam, membershipsOf } from "@/lib/team";
 import { logoutAction, switchTeamAction } from "@/app/actions";
 import {
   IconBan,
+  IconBook,
   IconBroadcast,
   IconChart,
   IconChevronUpDown,
+  IconGitHub,
   IconGlobe,
   IconKey,
   IconLogout,
   IconMail,
+  IconMetrics,
   IconSettings,
   IconTeam,
   IconTemplate,
@@ -21,6 +24,7 @@ import {
 
 const NAV = [
   { href: "/overview", label: "Overview", icon: IconChart },
+  { href: "/metrics", label: "Metrics", icon: IconMetrics },
   { href: "/emails", label: "Emails", icon: IconMail },
   { href: "/broadcasts", label: "Broadcasts", icon: IconBroadcast },
   { href: "/audiences", label: "Audiences", icon: IconUsers },
@@ -98,6 +102,27 @@ export default async function DashLayout({
             </Link>
           ))}
         </nav>
+
+        {/* resources */}
+        <div className="border-t border-line px-3 py-2">
+          <a
+            href="/docs"
+            target="_blank"
+            className="nav-link flex items-center gap-3 rounded-md px-3 py-1.5 text-xs text-fg-faint transition-colors hover:bg-surface-2 hover:text-fg"
+          >
+            <IconBook className="shrink-0" width={14} height={14} />
+            Documentation
+          </a>
+          <a
+            href="https://github.com/emreisik95/sendthen"
+            target="_blank"
+            rel="noopener"
+            className="nav-link flex items-center gap-3 rounded-md px-3 py-1.5 text-xs text-fg-faint transition-colors hover:bg-surface-2 hover:text-fg"
+          >
+            <IconGitHub className="shrink-0" width={14} height={14} />
+            GitHub
+          </a>
+        </div>
 
         {/* profile menu */}
         <div className="border-t border-line p-3">
