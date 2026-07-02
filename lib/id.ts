@@ -27,6 +27,7 @@ export const newTemplateId = () => `tpl_${nano(20)}`;
 export const newAudienceId = () => `aud_${nano(20)}`;
 export const newContactId = () => `con_${nano(24)}`;
 export const newBroadcastId = () => `bc_${nano(20)}`;
+export const newInboundId = () => `in_${nano(24)}`;
 
 // full secret tokens
 export const newApiToken = () => `st_${nano(32)}`;

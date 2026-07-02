@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db, templates } from "@/lib/db";
-import { apiError, requireApiKey } from "@/lib/api-auth";
+import { apiError, requireApiKey, requireScope } from "@/lib/api-auth";
 import { newTemplateId } from "@/lib/id";
 
 const createSchema = z
@@ -19,6 +19,8 @@ const createSchema = z
 export async function POST(req: Request) {
   const auth = await requireApiKey(req);
   if (auth instanceof NextResponse) return auth;
+  const denied = requireScope(auth, "templates.manage");
+  if (denied) return denied;
 
   let body: unknown;
   try {
@@ -56,6 +58,8 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   const auth = await requireApiKey(req);
   if (auth instanceof NextResponse) return auth;
+  const denied = requireScope(auth, "templates.manage");
+  if (denied) return denied;
 
   const rows = await db
     .select()

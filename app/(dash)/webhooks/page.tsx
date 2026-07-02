@@ -19,10 +19,9 @@ import {
   inputCls,
 } from "@/components/ui";
 import { CopyButton } from "@/components/copy-button";
+import { EventPicker } from "@/components/webhooks/event-picker";
 
 export const dynamic = "force-dynamic";
-
-import { EVENT_TYPES } from "@/lib/db";
 
 export default async function WebhooksPage() {
   const user = await requireUser();
@@ -63,23 +62,7 @@ export default async function WebhooksPage() {
             Add webhook
           </button>
         </div>
-        <div className="flex flex-wrap gap-3">
-          {EVENT_TYPES.map((ev) => (
-            <label
-              key={ev}
-              className="flex items-center gap-1.5 font-mono text-xs text-fg-muted"
-            >
-              <input
-                type="checkbox"
-                name="events"
-                value={ev}
-                defaultChecked={ev !== "email.queued"}
-                className="accent-[#C6FF00]"
-              />
-              {ev}
-            </label>
-          ))}
-        </div>
+        <EventPicker />
       </form>
 
       {rows.length === 0 ? (

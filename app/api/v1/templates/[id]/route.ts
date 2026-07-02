@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db, templates } from "@/lib/db";
-import { apiError, requireApiKey } from "@/lib/api-auth";
+import { apiError, requireApiKey, requireScope } from "@/lib/api-auth";
 
 const patchSchema = z.object({
   name: z.string().min(1).max(100).optional(),
@@ -17,6 +17,8 @@ export async function GET(
 ) {
   const auth = await requireApiKey(req);
   if (auth instanceof NextResponse) return auth;
+  const denied = requireScope(auth, "templates.manage");
+  if (denied) return denied;
 
   const { id } = await params;
   const [tpl] = await db
@@ -41,6 +43,8 @@ export async function PATCH(
 ) {
   const auth = await requireApiKey(req);
   if (auth instanceof NextResponse) return auth;
+  const denied = requireScope(auth, "templates.manage");
+  if (denied) return denied;
 
   let body: unknown;
   try {
@@ -71,6 +75,8 @@ export async function DELETE(
 ) {
   const auth = await requireApiKey(req);
   if (auth instanceof NextResponse) return auth;
+  const denied = requireScope(auth, "templates.manage");
+  if (denied) return denied;
 
   const { id } = await params;
   const deleted = await db

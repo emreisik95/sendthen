@@ -127,6 +127,8 @@ export const apiKeys = sqliteTable(
     permission: text("permission", { enum: ["full", "sending"] })
       .notNull()
       .default("full"),
+    // granular scopes; null = derive from legacy permission column
+    scopes: text("scopes", { mode: "json" }).$type<string[]>(),
     createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
     lastUsedAt: integer("last_used_at", { mode: "timestamp_ms" }),
     revokedAt: integer("revoked_at", { mode: "timestamp_ms" }),
@@ -404,6 +406,38 @@ export const broadcasts = sqliteTable(
   },
   (t) => [index("broadcasts_user_idx").on(t.userId)],
 );
+
+export const inboundEmails = sqliteTable(
+  "inbound_emails",
+  {
+    id: text("id").primaryKey(),
+    teamId: text("team_id").references(() => teams.id, {
+      onDelete: "cascade",
+    }),
+    domainId: text("domain_id").references(() => domains.id),
+    from: text("from").notNull(),
+    to: text("to", { mode: "json" }).$type<string[]>().notNull(),
+    cc: text("cc", { mode: "json" }).$type<string[]>(),
+    subject: text("subject").notNull().default(""),
+    html: text("html"),
+    text: text("text"),
+    headers: text("headers", { mode: "json" }).$type<Record<string, string>>(),
+    messageId: text("message_id"),
+    attachments: text("attachments", { mode: "json" }).$type<
+      { filename: string; contentType: string; size: number; content: string }[]
+    >(),
+    read: integer("read", { mode: "boolean" }).notNull().default(false),
+    // set when this inbound email was forwarded (outbound email id)
+    forwardedTo: text("forwarded_to"),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+  },
+  (t) => [
+    index("inbound_team_idx").on(t.teamId, t.createdAt),
+    index("inbound_message_idx").on(t.messageId),
+  ],
+);
+
+export type InboundEmail = typeof inboundEmails.$inferSelect;
 
 export type User = typeof users.$inferSelect;
 export type Team = typeof teams.$inferSelect;

@@ -18,7 +18,8 @@ const NAV = [
   ["tracking", "Open & click tracking"],
   ["suppressions", "Suppressions"],
   ["domains", "Domains API"],
-  ["api-keys", "API Keys"],
+  ["api-keys", "API Keys & scopes"],
+  ["inbound", "Inbound email"],
   ["webhooks", "Webhooks"],
   ["sdk", "SDK reference"],
   ["errors", "Errors"],
@@ -334,14 +335,57 @@ DELETE /api/v1/domains/:id    remove`}</Code>
         </Section>
 
         {/* ---------------------------------------------------------- */}
-        <Section id="api-keys" title="API Keys">
-          <Code>{`POST   /api/v1/api-keys      { "name": "production", "permission": "full" | "sending" }
-GET    /api/v1/api-keys      list (prefixes only)
+        <Section id="api-keys" title="API Keys & scopes">
+          <Code>{`POST   /api/v1/api-keys      { "name": "production", "scopes": ["emails.send", "emails.read"] }
+GET    /api/v1/api-keys      list (prefixes + scopes)
 DELETE /api/v1/api-keys/:id  revoke`}</Code>
           <P>
             The full token is returned <b>only once</b>, in the create
-            response. Requires a <Mono>full</Mono>-permission key.
+            response. Omit <Mono>scopes</Mono> for full access. A request
+            outside a key&apos;s scopes fails with <Mono>403 missing_scope</Mono>.
           </P>
+          <Table
+            head={["Scope", "Grants"]}
+            rows={[
+              ["emails.send", "POST /emails, /emails/batch, cancel"],
+              ["emails.read", "GET /emails, GET /emails/:id"],
+              ["domains.manage", "Domains CRUD + verify"],
+              ["templates.manage", "Templates CRUD"],
+              ["audiences.manage", "Audiences + contacts CRUD"],
+              ["broadcasts.manage", "Broadcasts CRUD + send"],
+              ["webhooks.manage", "Webhooks CRUD"],
+              ["keys.manage", "API keys CRUD"],
+            ]}
+          />
+        </Section>
+
+        {/* ---------------------------------------------------------- */}
+        <Section id="inbound" title="Inbound email">
+          <P>
+            sendthen can receive mail for your verified domains and show it
+            under <b>Emails → Receiving</b>, with one-click forwarding through
+            your configured transport. Three ways in:
+          </P>
+          <Table
+            head={["Route", "How"]}
+            rows={[
+              [
+                "Built-in SMTP",
+                "The operator sets an SMTP port for the instance; point your domain's MX records at the server. Unknown recipients are rejected at RCPT time.",
+              ],
+              [
+                "Amazon SES receiving",
+                "Create an SES receipt rule that publishes to an SNS topic pointed at POST /api/inbound/ses.",
+              ],
+              [
+                "HTTP ingest",
+                "POST raw MIME to /api/inbound/raw with the instance ingest key as a bearer token — works behind Cloudflare Email Workers or any relay.",
+              ],
+            ]}
+          />
+          <Code>{`curl -X POST https://send.yourdomain.com/api/inbound/raw \\
+  -H "Authorization: Bearer <ingest key>" \\
+  --data-binary @message.eml`}</Code>
         </Section>
 
         {/* ---------------------------------------------------------- */}

@@ -5,6 +5,7 @@ import { db, domains } from "@/lib/db";
 import { requireUser } from "@/lib/auth-user";
 import { getActiveTeam } from "@/lib/team";
 import { dnsRecordsForDomain } from "@/lib/dkim";
+import { publicUrl } from "@/lib/tracking";
 import { deleteDomainAction, verifyDomainAction } from "@/app/actions";
 import {
   Card,
@@ -37,6 +38,10 @@ export default async function DomainDetailPage({
     domain.dkimSelector,
     domain.dkimPublicKey,
   );
+
+  const base = publicUrl();
+  const mxHost = base ? new URL(base).hostname : "your-server-hostname";
+  const sesEndpoint = base ? `${base}/api/inbound/ses` : null;
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -85,6 +90,65 @@ export default async function DomainDetailPage({
           );
         })}
       </div>
+
+      <Card className="mb-6 p-4">
+        <h2 className="mb-2 text-xs font-medium uppercase tracking-wider text-fg-faint">
+          Receiving email
+        </h2>
+        <p className="mb-4 text-sm text-fg-muted">
+          Want to receive mail on this domain? Two ways to get it in:
+        </p>
+
+        <div className="mb-4">
+          <p className="mb-2 text-sm text-fg">
+            1. Point MX records at this instance
+          </p>
+          <p className="mb-2 text-xs text-fg-muted">
+            Add this MX record so mail for {domain.name} is delivered straight
+            here. Your operator needs to enable the SMTP listener for this to
+            work.
+          </p>
+          <div className="mb-1 flex items-center gap-2">
+            <span className="w-16 shrink-0 text-xs uppercase tracking-wider text-fg-faint">
+              Host
+            </span>
+            <code className="min-w-0 flex-1 truncate font-mono text-xs text-fg">
+              {domain.name}
+            </code>
+            <CopyButton value={domain.name} />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-16 shrink-0 text-xs uppercase tracking-wider text-fg-faint">
+              Value
+            </span>
+            <code className="min-w-0 flex-1 truncate rounded bg-surface-3 px-2 py-1.5 font-mono text-xs text-fg-muted">
+              10 {mxHost}
+            </code>
+            <CopyButton value={`10 ${mxHost}`} />
+          </div>
+        </div>
+
+        <div>
+          <p className="mb-2 text-sm text-fg">2. Amazon SES receiving</p>
+          <p className="mb-2 text-xs text-fg-muted">
+            Already receiving through SES? Create a receipt rule that publishes
+            to an SNS topic, and subscribe this endpoint to the topic:
+          </p>
+          {sesEndpoint ? (
+            <div className="flex items-center gap-2">
+              <code className="min-w-0 flex-1 truncate rounded bg-surface-3 px-2 py-1.5 font-mono text-xs text-fg-muted">
+                {sesEndpoint}
+              </code>
+              <CopyButton value={sesEndpoint} />
+            </div>
+          ) : (
+            <p className="text-xs text-fg-faint">
+              Set your instance&apos;s public URL to see the exact endpoint —
+              it lives at /api/inbound/ses.
+            </p>
+          )}
+        </div>
+      </Card>
 
       <div className="flex items-center gap-3">
         <form action={verifyDomainAction}>

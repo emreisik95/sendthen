@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { desc, eq } from "drizzle-orm";
-import { db, emails } from "@/lib/db";
+import { and, count, desc, eq } from "drizzle-orm";
+import { db, emails, inboundEmails } from "@/lib/db";
 import { requireUser } from "@/lib/auth-user";
 import { getActiveTeam } from "@/lib/team";
 import { Empty, PageHeader, StatusPill, Card, fmtDate } from "@/components/ui";
+import { EmailTabs } from "./tabs";
 
 export const dynamic = "force-dynamic";
 
@@ -16,10 +17,17 @@ export default async function EmailsPage() {
     .where(eq(emails.teamId, team.id))
     .orderBy(desc(emails.createdAt))
     .limit(100);
+  const [{ value: unreadCount }] = await db
+    .select({ value: count() })
+    .from(inboundEmails)
+    .where(
+      and(eq(inboundEmails.teamId, team.id), eq(inboundEmails.read, false)),
+    );
 
   return (
     <div className="mx-auto max-w-5xl">
       <PageHeader title="Emails" />
+      <EmailTabs active="sending" unread={unreadCount} />
       {rows.length === 0 ? (
         <Empty>
           No emails yet. Send one via{" "}

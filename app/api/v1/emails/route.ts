@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
 import { desc, eq } from "drizzle-orm";
 import { db, emails } from "@/lib/db";
-import { apiError, requireApiKey } from "@/lib/api-auth";
+import { apiError, requireApiKey, requireScope } from "@/lib/api-auth";
 import { kickQueue } from "@/lib/queue";
 import { SendError, createEmail, sendSchema } from "@/lib/send-email";
 
 export async function POST(req: Request) {
   const auth = await requireApiKey(req);
   if (auth instanceof NextResponse) return auth;
+  const denied = requireScope(auth, "emails.send");
+  if (denied) return denied;
 
   let body: unknown;
   try {
@@ -37,6 +39,8 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   const auth = await requireApiKey(req);
   if (auth instanceof NextResponse) return auth;
+  const denied = requireScope(auth, "emails.read");
+  if (denied) return denied;
 
   const url = new URL(req.url);
   const limit = Math.min(Number(url.searchParams.get("limit") ?? 20), 100);

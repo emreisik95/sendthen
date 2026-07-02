@@ -7,6 +7,42 @@ export function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }
 
+/** Granular API key scopes, selectable at key creation. */
+export const SCOPES = [
+  { value: "emails.send", label: "Send emails", group: "Emails" },
+  { value: "emails.read", label: "Read emails & events", group: "Emails" },
+  { value: "domains.manage", label: "Manage domains", group: "Resources" },
+  { value: "templates.manage", label: "Manage templates", group: "Resources" },
+  { value: "audiences.manage", label: "Manage audiences & contacts", group: "Resources" },
+  { value: "broadcasts.manage", label: "Manage & send broadcasts", group: "Resources" },
+  { value: "webhooks.manage", label: "Manage webhooks", group: "Admin" },
+  { value: "keys.manage", label: "Manage API keys", group: "Admin" },
+] as const;
+
+export type Scope = (typeof SCOPES)[number]["value"];
+
+const ALL_SCOPES = SCOPES.map((s) => s.value);
+
+/** Effective scopes: explicit list, or derived from the legacy permission. */
+export function scopesOf(key: ApiKey): Scope[] {
+  if (key.scopes && key.scopes.length > 0) return key.scopes as Scope[];
+  if (key.permission === "sending") return ["emails.send", "emails.read"];
+  return [...ALL_SCOPES];
+}
+
+/** 403 unless the key carries the scope. */
+export function requireScope(
+  key: ApiKey,
+  scope: Scope,
+): NextResponse | null {
+  if (scopesOf(key).includes(scope)) return null;
+  return apiError(
+    403,
+    "missing_scope",
+    `This API key does not have the ${scope} scope.`,
+  );
+}
+
 export interface ApiError {
   statusCode: number;
   name: string;

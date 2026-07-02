@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { apiError, requireApiKey } from "@/lib/api-auth";
+import { apiError, requireApiKey, requireScope } from "@/lib/api-auth";
 import { kickQueue } from "@/lib/queue";
 import { SendError, createEmail, sendSchema } from "@/lib/send-email";
 
@@ -9,6 +9,8 @@ const batchSchema = z.array(sendSchema).min(1).max(100);
 export async function POST(req: Request) {
   const auth = await requireApiKey(req);
   if (auth instanceof NextResponse) return auth;
+  const denied = requireScope(auth, "emails.send");
+  if (denied) return denied;
 
   let body: unknown;
   try {

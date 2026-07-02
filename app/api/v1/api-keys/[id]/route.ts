@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { and, eq, isNull } from "drizzle-orm";
 import { db, apiKeys } from "@/lib/db";
-import { apiError, requireApiKey } from "@/lib/api-auth";
+import { apiError, requireApiKey, requireScope } from "@/lib/api-auth";
 
 export async function DELETE(
   req: Request,
@@ -9,6 +9,8 @@ export async function DELETE(
 ) {
   const auth = await requireApiKey(req);
   if (auth instanceof NextResponse) return auth;
+  const denied = requireScope(auth, "keys.manage");
+  if (denied) return denied;
   if (auth.permission !== "full") {
     return apiError(403, "forbidden", "This key cannot manage API keys.");
   }

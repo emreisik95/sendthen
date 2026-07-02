@@ -2,20 +2,30 @@ import { NextResponse } from "next/server";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { db, apiKeys } from "@/lib/db";
-import { apiError, hashToken, requireApiKey } from "@/lib/api-auth";
+import {
+  apiError,
+  hashToken,
+  requireApiKey,
+  requireScope,
+  SCOPES,
+  scopesOf,
+} from "@/lib/api-auth";
 import { newApiKeyId, newApiToken } from "@/lib/id";
 
 const createSchema = z.object({
   name: z.string().min(1).max(100),
   permission: z.enum(["full", "sending"]).default("full"),
+  scopes: z
+    .array(z.enum(SCOPES.map((s) => s.value) as [string, ...string[]]))
+    .min(1)
+    .optional(),
 });
 
 export async function POST(req: Request) {
   const auth = await requireApiKey(req);
   if (auth instanceof NextResponse) return auth;
-  if (auth.permission !== "full") {
-    return apiError(403, "forbidden", "This key cannot manage API keys.");
-  }
+  const denied = requireScope(auth, "keys.manage");
+  if (denied) return denied;
 
   let body: unknown;
   try {
@@ -36,6 +46,7 @@ export async function POST(req: Request) {
       userId: auth.userId,
       teamId: auth.teamId,
       name: parsed.data.name,
+      scopes: parsed.data.scopes ?? null,
       tokenHash: hashToken(token),
       tokenPrefix: token.slice(0, 12),
       permission: parsed.data.permission,
@@ -50,6 +61,8 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   const auth = await requireApiKey(req);
   if (auth instanceof NextResponse) return auth;
+  const denied = requireScope(auth, "keys.manage");
+  if (denied) return denied;
 
   const rows = await db
     .select()
@@ -63,6 +76,7 @@ export async function GET(req: Request) {
       name: k.name,
       token_prefix: k.tokenPrefix,
       permission: k.permission,
+      scopes: scopesOf(k),
       last_used_at: k.lastUsedAt?.toISOString() ?? null,
       created_at: k.createdAt.toISOString(),
     })),

@@ -9,6 +9,7 @@ import {
   broadcasts,
   contacts,
   domains,
+  inboundEmails,
   invites,
   suppressions,
   teamMembers,
@@ -36,8 +37,9 @@ import {
   setActiveTeamCookie,
 } from "@/lib/team";
 import { sendBroadcast } from "@/lib/broadcast";
+import { forwardInbound } from "@/lib/inbound";
 import { SendError } from "@/lib/send-email";
-import { hashToken } from "@/lib/api-auth";
+import { hashToken, SCOPES } from "@/lib/api-auth";
 import { encryptSecret } from "@/lib/crypto";
 import {
   newApiKeyId,
@@ -314,14 +316,24 @@ export async function deleteDomainAction(formData: FormData): Promise<void> {
 export async function createApiKeyAction(formData: FormData): Promise<void> {
   const { user, team } = await activeContext();
   const name = String(formData.get("name") ?? "").trim() || "default";
+  const validScopes = new Set<string>(SCOPES.map((s) => s.value));
+  const picked = formData
+    .getAll("scopes")
+    .map(String)
+    .filter((s) => validScopes.has(s));
+  // empty selection = full access (scopes null → all)
+  const scopes = picked.length > 0 && picked.length < SCOPES.length ? picked : null;
   const permission =
-    formData.get("permission") === "sending" ? "sending" : "full";
+    scopes && !scopes.some((s) => s !== "emails.send" && s !== "emails.read")
+      ? "sending"
+      : "full";
   const token = newApiToken();
   await db.insert(apiKeys).values({
     id: newApiKeyId(),
     userId: user.id,
     teamId: team.id,
     name,
+    scopes,
     tokenHash: hashToken(token),
     tokenPrefix: token.slice(0, 12),
     permission,
@@ -432,7 +444,10 @@ export async function saveSettingsAction(formData: FormData): Promise<void> {
       "sesSecretAccessKey",
       existing?.sesSecretAccessKey,
     ),
-    sesRegion: String(formData.get("sesRegion") ?? "").trim() || null,
+    sesRegion:
+      String(formData.get("sesRegion") ?? "").trim() ||
+      existing?.sesRegion ||
+      null,
     trackOpens: formData.get("trackOpens") === "on",
     trackClicks: formData.get("trackClicks") === "on",
     updatedAt: new Date(),
@@ -654,4 +669,47 @@ export async function deleteBroadcastAction(formData: FormData): Promise<void> {
       ),
     );
   redirect("/broadcasts");
+}
+
+/* ---------- inbound emails ---------- */
+
+export async function forwardInboundAction(formData: FormData): Promise<void> {
+  const { user, team } = await activeContext();
+  const id = String(formData.get("id"));
+  const to = String(formData.get("to") ?? "")
+    .toLowerCase()
+    .trim();
+  const [inbound] = await db
+    .select()
+    .from(inboundEmails)
+    .where(and(eq(inboundEmails.id, id), eq(inboundEmails.teamId, team.id)));
+  if (!inbound) redirect("/emails/inbound");
+  if (!to) redirect(`/emails/inbound/${id}?error=validation_error`);
+  try {
+    await forwardInbound(inbound, to, user.id);
+  } catch (err) {
+    if (!(err instanceof SendError)) throw err;
+    redirect(`/emails/inbound/${id}?error=${err.code}`);
+  }
+  redirect(`/emails/inbound/${id}?forwarded=1`);
+}
+
+export async function deleteInboundAction(formData: FormData): Promise<void> {
+  const { team } = await activeContext();
+  const id = String(formData.get("id"));
+  await db
+    .delete(inboundEmails)
+    .where(and(eq(inboundEmails.id, id), eq(inboundEmails.teamId, team.id)));
+  redirect("/emails/inbound");
+}
+
+export async function markAllInboundReadAction(): Promise<void> {
+  const { team } = await activeContext();
+  await db
+    .update(inboundEmails)
+    .set({ read: true })
+    .where(
+      and(eq(inboundEmails.teamId, team.id), eq(inboundEmails.read, false)),
+    );
+  redirect("/emails/inbound");
 }

@@ -246,7 +246,70 @@ headers["webhook-signature"] === `v1,${mac}`
   ? ok("webhook signature verified")
   : fail("signature", headers["webhook-signature"]);
 
-/* 14. invalid invite bounces to login */
+/* 14. scoped keys: sending-only key cannot manage domains */
+const scoped = await api("POST", "/api-keys", {
+  name: "e2e-scoped",
+  scopes: ["emails.send", "emails.read"],
+});
+scoped.status === 201 ? ok("scoped key created") : fail("scoped key", JSON.stringify(scoped.json));
+const scopedApi = async (method, p, body) => {
+  const res = await fetch(`${BASE}/api/v1${p}`, {
+    method,
+    headers: {
+      authorization: `Bearer ${scoped.json.token}`,
+      ...(body ? { "content-type": "application/json" } : {}),
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  return { status: res.status, json: await res.json() };
+};
+const scopedDomain = await scopedApi("POST", "/domains", { name: "nope.e2e.test" });
+scopedDomain.status === 403 && scopedDomain.json.name === "missing_scope"
+  ? ok("scoped key denied domains.manage")
+  : fail("scope enforcement", JSON.stringify(scopedDomain.json));
+const scopedSend = await scopedApi("POST", "/emails", {
+  from: `e2e <hi@${DOMAIN}>`,
+  to: "scoped@example.com",
+  subject: "scoped ok",
+  text: "s",
+});
+scopedSend.json.id ? ok("scoped key can send") : fail("scoped send", JSON.stringify(scopedSend.json));
+
+/* 15. inbound: raw MIME ingest lands in team inbox */
+const INGEST_KEY = process.env.SENDTHEN_INGEST_KEY ?? "e2e-ingest";
+const rawMime = [
+  `From: Outside Sender <someone@external.example>`,
+  `To: inbox@${DOMAIN}`,
+  `Subject: Hello inbound`,
+  `Message-ID: <e2e-${Date.now()}@external.example>`,
+  `Content-Type: text/plain; charset=utf-8`,
+  ``,
+  `Ping from the outside world.`,
+].join("\r\n");
+const badIngest = await fetch(`${BASE}/api/inbound/raw`, {
+  method: "POST",
+  body: rawMime,
+});
+badIngest.status === 401 ? ok("ingest rejects missing key") : fail("ingest auth", badIngest.status);
+const ingest = await fetch(`${BASE}/api/inbound/raw`, {
+  method: "POST",
+  headers: { authorization: `Bearer ${INGEST_KEY}` },
+  body: rawMime,
+});
+const ingestJson = await ingest.json();
+ingestJson.stored === 1 ? ok("inbound stored") : fail("inbound ingest", JSON.stringify(ingestJson));
+{
+  const db3 = new Database(DB_PATH);
+  const row = db3
+    .prepare("SELECT team_id, subject, \"from\" as sender FROM inbound_emails ORDER BY created_at DESC LIMIT 1")
+    .get();
+  db3.close();
+  row?.team_id === tid && row.subject === "Hello inbound"
+    ? ok("inbound matched to owning team")
+    : fail("inbound team match", JSON.stringify(row));
+}
+
+/* 16. invalid invite bounces to login */
 const badInvite = await fetch(`${BASE}/invite/notarealtoken`, { redirect: "manual" });
 [302, 307].includes(badInvite.status) ? ok("bad invite redirects") : fail("invite", badInvite.status);
 

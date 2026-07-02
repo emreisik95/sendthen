@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db, audiences, contacts } from "@/lib/db";
-import { apiError, requireApiKey } from "@/lib/api-auth";
+import { apiError, requireApiKey, requireScope } from "@/lib/api-auth";
 import { newContactId } from "@/lib/id";
 
 const createSchema = z.object({
@@ -26,6 +26,8 @@ export async function POST(
 ) {
   const auth = await requireApiKey(req);
   if (auth instanceof NextResponse) return auth;
+  const denied = requireScope(auth, "audiences.manage");
+  if (denied) return denied;
 
   const { id } = await params;
   if (!(await ownedAudience(id, auth.teamId!))) {
@@ -68,6 +70,8 @@ export async function GET(
 ) {
   const auth = await requireApiKey(req);
   if (auth instanceof NextResponse) return auth;
+  const denied = requireScope(auth, "audiences.manage");
+  if (denied) return denied;
 
   const { id } = await params;
   if (!(await ownedAudience(id, auth.teamId!))) {

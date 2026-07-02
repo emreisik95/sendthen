@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
 import { db, emails } from "@/lib/db";
-import { apiError, requireApiKey } from "@/lib/api-auth";
+import { apiError, requireApiKey, requireScope } from "@/lib/api-auth";
 import { recordEvent } from "@/lib/events";
 
 export async function POST(
@@ -10,6 +10,8 @@ export async function POST(
 ) {
   const auth = await requireApiKey(req);
   if (auth instanceof NextResponse) return auth;
+  const denied = requireScope(auth, "emails.send");
+  if (denied) return denied;
 
   const { id } = await params;
   const updated = await db

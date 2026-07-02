@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
 import { db, domains } from "@/lib/db";
-import { apiError, requireApiKey } from "@/lib/api-auth";
+import { apiError, requireApiKey, requireScope } from "@/lib/api-auth";
 import { domainResponse } from "@/lib/serialize";
 
 export async function GET(
@@ -10,6 +10,8 @@ export async function GET(
 ) {
   const auth = await requireApiKey(req);
   if (auth instanceof NextResponse) return auth;
+  const denied = requireScope(auth, "domains.manage");
+  if (denied) return denied;
 
   const { id } = await params;
   const [domain] = await db
@@ -26,6 +28,8 @@ export async function DELETE(
 ) {
   const auth = await requireApiKey(req);
   if (auth instanceof NextResponse) return auth;
+  const denied = requireScope(auth, "domains.manage");
+  if (denied) return denied;
 
   const { id } = await params;
   const deleted = await db

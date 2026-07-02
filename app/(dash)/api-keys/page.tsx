@@ -3,6 +3,8 @@ import { db, apiKeys } from "@/lib/db";
 import { requireUser } from "@/lib/auth-user";
 import { getActiveTeam } from "@/lib/team";
 import { createApiKeyAction, revokeApiKeyAction } from "@/app/actions";
+import { SCOPES, scopesOf } from "@/lib/api-auth";
+import { ScopePicker } from "@/components/api-keys/scope-picker";
 import {
   Card,
   Empty,
@@ -48,22 +50,21 @@ export default async function ApiKeysPage({
         </Card>
       )}
 
-      <form action={createApiKeyAction} className="mb-6 flex gap-2">
-        <input
-          name="name"
-          placeholder="key name (e.g. production)"
-          className={`${inputCls} max-w-sm`}
-        />
-        <select
-          name="permission"
-          className="rounded-md border border-line bg-surface px-3 py-2 text-sm text-fg"
-        >
-          <option value="full">full access</option>
-          <option value="sending">sending only</option>
-        </select>
-        <button type="submit" className={btnPrimary}>
-          Create key
-        </button>
+      <form
+        action={createApiKeyAction}
+        className="mb-6 rounded-[10px] border border-line bg-surface p-4"
+      >
+        <div className="flex gap-2">
+          <input
+            name="name"
+            placeholder="key name (e.g. production)"
+            className={`${inputCls} max-w-sm`}
+          />
+          <button type="submit" className={btnPrimary}>
+            Create key
+          </button>
+        </div>
+        <ScopePicker scopes={[...SCOPES]} />
       </form>
 
       {rows.length === 0 ? (
@@ -75,11 +76,26 @@ export default async function ApiKeysPage({
               key={k.id}
               className="flex items-center justify-between gap-4 px-4 py-3"
             >
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <div className="text-sm">{k.name}</div>
                 <div className="font-mono text-xs text-fg-faint">
-                  {k.tokenPrefix}… · {k.permission} · last used{" "}
-                  {fmtDate(k.lastUsedAt)}
+                  {k.tokenPrefix}… · last used {fmtDate(k.lastUsedAt)}
+                </div>
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {scopesOf(k).length === SCOPES.length ? (
+                    <span className="rounded bg-lime/14 px-1.5 py-0.5 font-mono text-[10px] text-lime">
+                      full access
+                    </span>
+                  ) : (
+                    scopesOf(k).map((s) => (
+                      <span
+                        key={s}
+                        className="rounded bg-surface-3 px-1.5 py-0.5 font-mono text-[10px] text-fg-muted"
+                      >
+                        {s}
+                      </span>
+                    ))
+                  )}
                 </div>
               </div>
               <form action={revokeApiKeyAction}>
