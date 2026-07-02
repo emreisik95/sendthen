@@ -82,17 +82,28 @@ export default async function DomainDetailPage({
                 <StatusPill status={verified ? "verified" : "pending"} />
               </div>
               <div className="mb-1 flex items-center gap-2">
+                <span className="w-14 shrink-0 font-mono text-[10px] uppercase tracking-wider text-fg-faint">
+                  Host
+                </span>
                 <code className="min-w-0 flex-1 truncate font-mono text-xs text-fg">
                   {r.name}
                 </code>
                 <CopyButton value={r.name} />
               </div>
               <div className="flex items-center gap-2">
+                <span className="w-14 shrink-0 font-mono text-[10px] uppercase tracking-wider text-fg-faint">
+                  Value
+                </span>
                 <code className="min-w-0 flex-1 truncate rounded bg-surface-3 px-2 py-1.5 font-mono text-xs text-fg-muted">
                   {r.value}
                 </code>
                 <CopyButton value={r.value} />
               </div>
+              <p className="mt-2 text-[11px] text-fg-faint">
+                At your DNS provider: create a <b>TXT</b> record, paste the{" "}
+                <b>Host</b> into the name field and the <b>Value</b> into the
+                content field — don&apos;t swap them.
+              </p>
             </Card>
           );
         })}

@@ -5,9 +5,18 @@ import { useRouter } from "next/navigation";
 
 const INTERVAL_S = 30;
 
+interface CheckResult {
+  dkim: boolean;
+  spf: boolean;
+  verified: boolean;
+  dkimFound?: string[];
+  spfFound?: string[];
+}
+
 /**
- * Pulsing live DNS checker for pending domains. Re-verifies every 30s
- * and refreshes the page when the domain flips to verified.
+ * Pulsing live DNS checker for pending domains. Re-verifies every 30s,
+ * shows what DNS actually returned when a record is wrong, and refreshes
+ * the page when the domain flips to verified.
  */
 export function LiveVerify({
   domainId,
@@ -19,6 +28,7 @@ export function LiveVerify({
   const router = useRouter();
   const [checking, setChecking] = useState(false);
   const [nextIn, setNextIn] = useState(INTERVAL_S);
+  const [last, setLast] = useState<CheckResult | null>(null);
   const busy = useRef(false);
 
   const check = useCallback(async () => {
@@ -32,7 +42,8 @@ export function LiveVerify({
         body: JSON.stringify({ id: domainId }),
       });
       if (res.ok) {
-        const json = (await res.json()) as { verified?: boolean };
+        const json = (await res.json()) as CheckResult;
+        setLast(json);
         if (json.verified) {
           router.refresh();
           return;
@@ -78,25 +89,61 @@ export function LiveVerify({
     );
   }
 
+  const diagnostics: { label: string; detail: string }[] = [];
+  if (last && !last.verified) {
+    if (!last.dkim) {
+      diagnostics.push({
+        label: "DKIM",
+        detail:
+          last.dkimFound && last.dkimFound.length > 0
+            ? `found a TXT record, but it doesn't match the key — check you copied the full value`
+            : "no TXT record found at the DKIM host yet",
+      });
+    }
+    if (!last.spf) {
+      const found = last.spfFound?.find((t) => !t.startsWith("v=spf1"));
+      diagnostics.push({
+        label: "SPF",
+        detail: found
+          ? `found “${found.slice(0, 60)}${found.length > 60 ? "…" : ""}” — the record's value must be v=spf1 a mx ~all`
+          : "no TXT record found on the domain yet",
+      });
+    }
+  }
+
   return (
-    <span className="flex items-center gap-2 font-mono text-xs text-fg-muted">
-      {dot}
-      {checking ? (
-        "checking DNS records…"
-      ) : (
-        <>
-          watching DNS · next check in{" "}
-          <span className="tabular-nums text-fg">{nextIn}s</span>
-          {" · "}
-          <button
-            type="button"
-            onClick={() => void check()}
-            className="text-lime hover:underline"
-          >
-            check now
-          </button>
-        </>
+    <div className="space-y-1.5">
+      <span className="flex items-center gap-2 font-mono text-xs text-fg-muted">
+        {dot}
+        {checking ? (
+          "checking DNS records…"
+        ) : (
+          <>
+            watching DNS · next check in{" "}
+            <span className="tabular-nums text-fg">{nextIn}s</span>
+            {" · "}
+            <button
+              type="button"
+              onClick={() => void check()}
+              className="text-lime hover:underline"
+            >
+              check now
+            </button>
+          </>
+        )}
+      </span>
+      {diagnostics.map((d) => (
+        <p key={d.label} className="font-mono text-xs text-warn">
+          {d.label}: {d.detail}
+        </p>
+      ))}
+      {last && !last.verified && (last.dkim || last.spf) && (
+        <p className="font-mono text-xs text-lime">
+          {last.dkim && "DKIM ✓"}
+          {last.dkim && last.spf && " · "}
+          {last.spf && "SPF ✓"}
+        </p>
       )}
-    </span>
+    </div>
   );
 }

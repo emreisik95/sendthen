@@ -15,6 +15,9 @@ export interface VerifyResult {
   dkim: boolean;
   spf: boolean;
   verified: boolean;
+  /** what the DNS actually returned, for user-facing diagnostics */
+  dkimFound: string[];
+  spfFound: string[];
 }
 
 /**
@@ -24,19 +27,21 @@ export interface VerifyResult {
 export async function verifyDomain(domain: Domain): Promise<VerifyResult> {
   let dkim: boolean;
   let spf: boolean;
+  let dkimFound: string[] = [];
+  let spfFound: string[] = [];
 
   if (process.env.SENDTHEN_DNS_MOCK === "verified") {
     dkim = true;
     spf = true;
   } else {
-    const [dkimTxts, spfTxts] = await Promise.all([
+    [dkimFound, spfFound] = await Promise.all([
       txtRecords(`${domain.dkimSelector}._domainkey.${domain.name}`),
       txtRecords(domain.name),
     ]);
-    dkim = dkimTxts.some(
+    dkim = dkimFound.some(
       (t) => t.includes("v=DKIM1") && t.includes(domain.dkimPublicKey),
     );
-    spf = spfTxts.some((t) => t.startsWith("v=spf1"));
+    spf = spfFound.some((t) => t.startsWith("v=spf1"));
   }
 
   const verified = dkim && spf;
@@ -52,5 +57,5 @@ export async function verifyDomain(domain: Domain): Promise<VerifyResult> {
     })
     .where(eq(domains.id, domain.id));
 
-  return { dkim, spf, verified };
+  return { dkim, spf, verified, dkimFound, spfFound };
 }
