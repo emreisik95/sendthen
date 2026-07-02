@@ -24,6 +24,7 @@ import {
 } from "@/lib/template-builder/types";
 import { btnPrimary, btnSecondary, inputCls } from "@/components/ui";
 import { Select } from "@/components/select";
+import { PresetGrid } from "@/components/builder/preset-gallery";
 
 /* ------------------------------------------------------------------ */
 /* Props & shared types                                                */
@@ -114,11 +115,6 @@ const SOCIAL_LABELS: Record<SocialKind, string> = {
   instagram: "Instagram",
   website: "Website",
 };
-
-/** Shorten a preset description for use as a compact option hint. */
-function truncateHint(text: string, max = 32): string {
-  return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
-}
 
 /** True when the event target is a form field the user is typing in. */
 function isFormField(target: EventTarget | null): boolean {
@@ -1200,7 +1196,18 @@ export function Editor({ initial, presets }: EditorProps) {
   /** The scrollable canvas viewport, for edge auto-scroll while dragging. */
   const canvasScrollRef = useRef<HTMLElement>(null);
   /** Bumped on every preset pick to remount (reset) the preset Select. */
-  const [presetPickCount, setPresetPickCount] = useState(0);
+  const [galleryOpen, setGalleryOpen] = useState(false);
+
+  // close the template gallery on outside click
+  useEffect(() => {
+    if (!galleryOpen) return;
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as HTMLElement;
+      if (!t.closest("[data-preset-gallery]")) setGalleryOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [galleryOpen]);
 
   /** Set right before an intentional navigation to suppress beforeunload. */
   const bypassGuard = useRef(false);
@@ -1570,25 +1577,32 @@ export function Editor({ initial, presets }: EditorProps) {
 
         {/* right: preset · undo/redo · device · test · save */}
         <div className="ml-auto flex shrink-0 items-center gap-2">
-          <Select
-            // Remount after every pick so the trigger returns to the
-            // placeholder — this is an action menu, not a value holder, and
-            // a cancelled dirty-confirm must not leave a preset shown as
-            // "selected".
-            key={presetPickCount}
-            ariaLabel="Apply preset"
-            placeholder="Apply preset…"
-            className="w-44"
-            options={presets.map((p) => ({
-              value: p.key,
-              label: p.name,
-              hint: truncateHint(p.description),
-            }))}
-            onValueChange={(key) => {
-              setPresetPickCount((n) => n + 1);
-              applyPreset(key);
-            }}
-          />
+          <div className="relative" data-preset-gallery>
+            <button
+              type="button"
+              onClick={() => setGalleryOpen((o) => !o)}
+              aria-expanded={galleryOpen}
+              className={`${btnSecondary} whitespace-nowrap px-3 py-1.5`}
+            >
+              Templates ▾
+            </button>
+            {galleryOpen && (
+              <div className="absolute right-0 top-full z-30 mt-2 w-[620px] max-w-[80vw] rounded-lg border border-line bg-surface-3 p-3 shadow-[0_16px_50px_rgba(0,0,0,0.6)]">
+                <div className="mb-2 px-1 text-xs font-medium uppercase tracking-wider text-fg-faint">
+                  Start from a template
+                </div>
+                <div className="max-h-[70vh] overflow-y-auto">
+                  <PresetGrid
+                    presets={presets}
+                    onApply={(key) => {
+                      setGalleryOpen(false);
+                      applyPreset(key);
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
 
           <div className="flex overflow-hidden rounded-md border border-line">
             <button
@@ -1782,40 +1796,13 @@ export function Editor({ initial, presets }: EditorProps) {
                   </div>
                   <div className="mt-6">
                     <p className="mb-3 text-center text-xs font-medium uppercase tracking-wider text-black/35">
-                      Start from a preset
+                      Start from a template
                     </p>
-                    <div
-                      className={`grid gap-3 ${
-                        device === "mobile" ? "grid-cols-2" : "grid-cols-3"
-                      }`}
-                    >
-                      {presets.map((p) => (
-                        <button
-                          key={p.key}
-                          type="button"
-                          onClick={() => applyPreset(p.key)}
-                          className="rounded-lg border border-line bg-surface p-4 text-left transition-colors hover:border-lime/40"
-                        >
-                          {p.swatch ? (
-                            <span aria-hidden className="mb-2 flex gap-1.5">
-                              {p.swatch.map((c, i) => (
-                                <span
-                                  key={i}
-                                  className="h-3 w-3 rounded-full border border-line"
-                                  style={{ background: c }}
-                                />
-                              ))}
-                            </span>
-                          ) : null}
-                          <span className="block text-xs font-medium text-fg">
-                            {p.name}
-                          </span>
-                          <span className="mt-0.5 block truncate text-[11px] leading-snug text-fg-muted">
-                            {p.description}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
+                    <PresetGrid
+                      presets={presets}
+                      onApply={applyPreset}
+                      columns={device === "mobile" ? 2 : 3}
+                    />
                   </div>
                 </>
               ) : (
