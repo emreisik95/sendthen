@@ -40,9 +40,9 @@ Email APIs are great until you're renting your own sending reputation back at pe
 |---|---|
 | ![template builder](.github/screenshots/builder.png) | ![domain DNS records](.github/screenshots/domain.png) |
 
-| Inbound detail | |
+| Preset gallery | Inbound detail |
 |---|---|
-| ![inbound email](.github/screenshots/inbound.png) | |
+| ![preset gallery](.github/screenshots/builder-gallery.png) | ![inbound email](.github/screenshots/inbound.png) |
 
 ## Quick start
 

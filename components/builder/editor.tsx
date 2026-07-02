@@ -35,6 +35,8 @@ export interface EditorPreset {
   description: string;
   subject: string;
   design: TemplateDesign;
+  /** Three representative colors shown as dots on the preset card. */
+  swatch?: [string, string, string];
 }
 
 export interface EditorProps {
@@ -57,6 +59,18 @@ type TestSendState =
   | { kind: "sending" }
   | { kind: "ok" }
   | { kind: "error"; message: string };
+
+/**
+ * One shared drag state for both palette→canvas inserts ("new") and
+ * existing-block reorders ("move"). `overIndex` is the insertion index the
+ * pointer currently maps to (null while not over a valid spot).
+ */
+type DragState =
+  | { type: "new"; payload: BlockType; overIndex: number | null }
+  | { type: "move"; payload: number; overIndex: number | null };
+
+const AUTOSCROLL_EDGE = 60;
+const AUTOSCROLL_STEP = 12;
 
 const HISTORY_CAP = 50;
 const MAX_SOCIAL_LINKS = 5;
@@ -1125,6 +1139,30 @@ function InsertPoint({
 }
 
 /* ------------------------------------------------------------------ */
+/* Drop indicator (insertion line while dragging)                      */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Zero-height wrapper so showing/hiding the indicator never shifts block
+ * midpoints (which would make the target index oscillate under the pointer).
+ */
+function DropIndicator() {
+  return (
+    <div aria-hidden className="pointer-events-none relative h-0">
+      <div
+        className="absolute inset-x-0 top-[-1.5px] z-10 h-[3px] rounded-full"
+        style={{ background: "#C6FF00" }}
+      >
+        <span
+          className="absolute -left-1.5 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full"
+          style={{ background: "#C6FF00" }}
+        />
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /* Main editor                                                         */
 /* ------------------------------------------------------------------ */
 
@@ -1157,9 +1195,10 @@ export function Editor({ initial, presets }: EditorProps) {
   const [saving, setSaving] = useState(false);
   const [testSend, setTestSend] = useState<TestSendState>({ kind: "idle" });
   const [dirty, setDirty] = useState(false);
-  const [dragIndex, setDragIndex] = useState<number | null>(null);
-  const [dropIndex, setDropIndex] = useState<number | null>(null);
+  const [drag, setDrag] = useState<DragState | null>(null);
   const [insertMenuAt, setInsertMenuAt] = useState<number | null>(null);
+  /** The scrollable canvas viewport, for edge auto-scroll while dragging. */
+  const canvasScrollRef = useRef<HTMLElement>(null);
   /** Bumped on every preset pick to remount (reset) the preset Select. */
   const [presetPickCount, setPresetPickCount] = useState(0);
 
@@ -1267,13 +1306,83 @@ export function Editor({ initial, presets }: EditorProps) {
     commit({ ...design, blocks: next });
   };
 
+  /* -------- drag & drop (palette insert + block reorder) -------- */
+
+  const setDragOverIndex = (next: number | null): void => {
+    setDrag((d) => (d && d.overIndex !== next ? { ...d, overIndex: next } : d));
+  };
+
+  /** True when the insertion line should render at insertion index `i`. */
+  const showDropAt = (i: number): boolean =>
+    drag !== null &&
+    drag.overIndex === i &&
+    // Moving a block right back where it came from is a no-op — hide the line.
+    !(drag.type === "move" && (i === drag.payload || i === drag.payload + 1));
+
+  /** Compute the insertion index from the pointer vs. a block's midpoint. */
+  const handleBlockDragOver = (e: React.DragEvent, index: number): void => {
+    if (!drag) return;
+    e.preventDefault();
+    const rect = e.currentTarget.getBoundingClientRect();
+    setDragOverIndex(e.clientY < rect.top + rect.height / 2 ? index : index + 1);
+  };
+
+  const handleCanvasDragOver = (e: React.DragEvent): void => {
+    if (!drag) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = drag.type === "new" ? "copy" : "move";
+    // Edge auto-scroll: nudge the viewport on every dragover tick near edges.
+    const el = canvasScrollRef.current;
+    if (el) {
+      const rect = el.getBoundingClientRect();
+      if (e.clientY < rect.top + AUTOSCROLL_EDGE) el.scrollTop -= AUTOSCROLL_STEP;
+      else if (e.clientY > rect.bottom - AUTOSCROLL_EDGE) el.scrollTop += AUTOSCROLL_STEP;
+    }
+  };
+
+  const handleCanvasDrop = (e: React.DragEvent): void => {
+    if (!drag) return;
+    e.preventDefault();
+    const to = drag.overIndex ?? design.blocks.length;
+    if (drag.type === "new") insertBlockAt(drag.payload, to);
+    else reorderBlock(drag.payload, to);
+    setDrag(null);
+  };
+
+  const handleCanvasDragLeave = (e: React.DragEvent): void => {
+    // dragleave fires for every child crossing — only react when the pointer
+    // actually exits the canvas root.
+    if (e.relatedTarget instanceof Node && e.currentTarget.contains(e.relatedTarget)) {
+      return;
+    }
+    setDragOverIndex(null);
+  };
+
+  /** Begin moving an existing block (from its grip or selected wrapper). */
+  const startMoveDrag = (
+    e: React.DragEvent,
+    index: number,
+    blockId: string,
+    dragImageEl: Element | null,
+  ): void => {
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", blockId);
+    if (dragImageEl instanceof HTMLElement) {
+      const r = dragImageEl.getBoundingClientRect();
+      e.dataTransfer.setDragImage(dragImageEl, e.clientX - r.left, e.clientY - r.top);
+    }
+    setDrag({ type: "move", payload: index, overIndex: null });
+  };
+
   /* -------- presets -------- */
 
   const applyPreset = (key: string): void => {
     const preset = presets.find((p) => p.key === key);
     if (!preset) return;
+    // Confirm when anything would be lost: existing blocks, or unsaved dirty
+    // edits (subject/global styles) — the subject overwrite is not undoable.
     if (
-      blocks.length > 0 &&
+      (blocks.length > 0 || dirty) &&
       !window.confirm(`Replace the current design with the “${preset.name}” preset?`)
     ) {
       return;
@@ -1603,9 +1712,16 @@ export function Editor({ initial, presets }: EditorProps) {
               <button
                 key={entry.type}
                 type="button"
-                title={`Add ${entry.label} block`}
+                title={`Add ${entry.label} block — click to append or drag onto the canvas`}
+                draggable
+                onDragStart={(e) => {
+                  e.dataTransfer.setData("application/x-block-type", entry.type);
+                  e.dataTransfer.effectAllowed = "copy";
+                  setDrag({ type: "new", payload: entry.type, overIndex: null });
+                }}
+                onDragEnd={() => setDrag(null)}
                 onClick={() => addBlock(entry.type)}
-                className="flex w-full items-center gap-2 rounded-md border border-line bg-surface-2 px-2.5 py-2 text-left text-xs text-fg transition-colors hover:border-lime/40 hover:bg-surface-3"
+                className="flex w-full cursor-grab items-center gap-2 rounded-md border border-line bg-surface-2 px-2.5 py-2 text-left text-xs text-fg transition-colors hover:border-lime/40 hover:bg-surface-3 active:cursor-grabbing"
               >
                 <span
                   aria-hidden
@@ -1621,12 +1737,16 @@ export function Editor({ initial, presets }: EditorProps) {
 
         {/* ---------------- Canvas ---------------- */}
         <main
+          ref={canvasScrollRef}
           className="flex-1 overflow-auto"
           style={{ background: styles.backgroundColor }}
           onClick={() => {
             setSelectedId(null);
             setInsertMenuAt(null);
           }}
+          onDragOver={handleCanvasDragOver}
+          onDrop={handleCanvasDrop}
+          onDragLeave={handleCanvasDragLeave}
         >
           <div className="mx-auto py-10" style={{ width: canvasWidth, maxWidth: "100%" }}>
             <div
@@ -1640,17 +1760,68 @@ export function Editor({ initial, presets }: EditorProps) {
               }}
               onClick={(e) => e.stopPropagation()}
             >
-              {blocks.length === 0 ? (
-                <div className="rounded-md border-2 border-dashed border-black/10 py-16 text-center text-sm text-black/40">
-                  Empty template — add blocks from the left palette
-                  <br />
-                  or apply a preset from the top bar.
+              {blocks.length === 0 && drag !== null ? (
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setDragOverIndex(0);
+                  }}
+                  className={`rounded-md border-2 border-dashed py-16 text-center text-sm transition-colors ${
+                    drag.overIndex === 0 ? "bg-lime/10" : ""
+                  }`}
+                  style={{ borderColor: "#C6FF00", color: "#84a300" }}
+                >
+                  Drop a block here
                 </div>
+              ) : blocks.length === 0 ? (
+                <>
+                  <div className="rounded-md border-2 border-dashed border-black/10 py-16 text-center text-sm text-black/40">
+                    Empty template — drag blocks in from the left palette
+                    <br />
+                    or start from a preset below.
+                  </div>
+                  <div className="mt-6">
+                    <p className="mb-3 text-center text-xs font-medium uppercase tracking-wider text-black/35">
+                      Start from a preset
+                    </p>
+                    <div
+                      className={`grid gap-3 ${
+                        device === "mobile" ? "grid-cols-2" : "grid-cols-3"
+                      }`}
+                    >
+                      {presets.map((p) => (
+                        <button
+                          key={p.key}
+                          type="button"
+                          onClick={() => applyPreset(p.key)}
+                          className="rounded-lg border border-line bg-surface p-4 text-left transition-colors hover:border-lime/40"
+                        >
+                          {p.swatch ? (
+                            <span aria-hidden className="mb-2 flex gap-1.5">
+                              {p.swatch.map((c, i) => (
+                                <span
+                                  key={i}
+                                  className="h-3 w-3 rounded-full border border-line"
+                                  style={{ background: c }}
+                                />
+                              ))}
+                            </span>
+                          ) : null}
+                          <span className="block text-xs font-medium text-fg">
+                            {p.name}
+                          </span>
+                          <span className="mt-0.5 block truncate text-[11px] leading-snug text-fg-muted">
+                            {p.description}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
               ) : (
                 blocks.map((block, index) => {
                   const isSelected = block.id === selectedId;
-                  const showDrop =
-                    dragIndex !== null && dropIndex === index && dragIndex !== index;
+                  const isDragSource = drag?.type === "move" && drag.payload === index;
                   return (
                     <div key={block.id}>
                       <InsertPoint
@@ -1659,43 +1830,28 @@ export function Editor({ initial, presets }: EditorProps) {
                         onToggle={setInsertMenuAt}
                         onInsert={insertBlockAt}
                       />
+                      {showDropAt(index) ? <DropIndicator /> : null}
                       <div
-                        draggable
-                        onDragStart={(e) => {
-                          setDragIndex(index);
-                          e.dataTransfer.effectAllowed = "move";
-                          e.dataTransfer.setData("text/plain", block.id);
-                        }}
-                        onDragOver={(e) => {
-                          e.preventDefault();
-                          e.dataTransfer.dropEffect = "move";
-                          if (dropIndex !== index) setDropIndex(index);
-                        }}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          if (dragIndex !== null) reorderBlock(dragIndex, index);
-                          setDragIndex(null);
-                          setDropIndex(null);
-                        }}
-                        onDragEnd={() => {
-                          setDragIndex(null);
-                          setDropIndex(null);
-                        }}
+                        data-block-wrapper
+                        draggable={isSelected}
+                        onDragStart={(e) =>
+                          startMoveDrag(e, index, block.id, e.currentTarget)
+                        }
+                        onDragOver={(e) => handleBlockDragOver(e, index)}
+                        onDragEnd={() => setDrag(null)}
                         onClick={(e) => {
                           e.stopPropagation();
                           setSelectedId(block.id);
                           setInsertMenuAt(null);
                         }}
-                        className="group relative cursor-pointer rounded-sm px-1 py-1.5"
+                        className={`group relative cursor-pointer rounded-sm px-1 py-1.5 ${
+                          isDragSource ? "opacity-40" : ""
+                        }`}
                         style={{
                           outline: isSelected
                             ? "1px solid #C6FF00"
                             : "1px solid transparent",
                           outlineOffset: 2,
-                          borderTop: showDrop
-                            ? "2px solid #C6FF00"
-                            : "2px solid transparent",
-                          opacity: dragIndex === index ? 0.4 : 1,
                         }}
                         onMouseEnter={(e) => {
                           if (!isSelected)
@@ -1707,6 +1863,30 @@ export function Editor({ initial, presets }: EditorProps) {
                             e.currentTarget.style.outline = "1px solid transparent";
                         }}
                       >
+                        {/* drag grip — visible on hover at the wrapper's left edge */}
+                        <div
+                          role="button"
+                          aria-label="Drag to reorder block"
+                          title="Drag to reorder"
+                          draggable
+                          onDragStart={(e) => {
+                            e.stopPropagation();
+                            startMoveDrag(
+                              e,
+                              index,
+                              block.id,
+                              e.currentTarget.closest("[data-block-wrapper]"),
+                            );
+                          }}
+                          onDragEnd={(e) => {
+                            e.stopPropagation();
+                            setDrag(null);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          className="absolute -left-7 top-1/2 z-10 -translate-y-1/2 cursor-grab select-none rounded border border-line bg-surface px-1 py-1 font-mono text-[10px] leading-[0.55rem] tracking-[-0.15em] text-fg-muted opacity-0 shadow-sm transition-opacity hover:text-fg group-hover:opacity-100 active:cursor-grabbing"
+                        >
+                          ⋮⋮
+                        </div>
                         {isSelected ? (
                           <div
                             className="absolute -top-3.5 right-1 z-10 flex overflow-hidden rounded-md border border-line bg-surface shadow-md"
@@ -1754,7 +1934,10 @@ export function Editor({ initial, presets }: EditorProps) {
                         ) : null}
                         <BlockPreview block={block} styles={styles} />
                       </div>
-                      {/* insert point after the last block */}
+                      {/* indicator + insert point after the last block */}
+                      {index === blocks.length - 1 && showDropAt(blocks.length) ? (
+                        <DropIndicator />
+                      ) : null}
                       {index === blocks.length - 1 ? (
                         <InsertPoint
                           index={blocks.length}
@@ -1767,28 +1950,6 @@ export function Editor({ initial, presets }: EditorProps) {
                   );
                 })
               )}
-              {/* drop zone after the last block */}
-              {dragIndex !== null && blocks.length > 0 ? (
-                <div
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    if (dropIndex !== blocks.length) setDropIndex(blocks.length);
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    if (dragIndex !== null) reorderBlock(dragIndex, blocks.length);
-                    setDragIndex(null);
-                    setDropIndex(null);
-                  }}
-                  className="h-6"
-                  style={{
-                    borderTop:
-                      dropIndex === blocks.length
-                        ? "2px solid #C6FF00"
-                        : "2px solid transparent",
-                  }}
-                />
-              ) : null}
             </div>
           </div>
         </main>

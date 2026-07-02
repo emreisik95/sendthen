@@ -63,6 +63,7 @@ console.log("  ✓ signed in");
 await shot("/emails", "emails");
 await shot("/metrics", "metrics", { settle: 1500 });
 await shot("/templates/builder?preset=welcome", "builder", { settle: 1500 });
+await shot("/templates/builder", "builder-gallery", { settle: 1500 });
 if (domain) await shot(`/domains/${domain.id}`, "domain");
 if (inbound) await shot(`/emails/inbound/${inbound.id}`, "inbound");
 
