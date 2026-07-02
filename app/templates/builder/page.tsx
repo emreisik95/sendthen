@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { and, eq } from "drizzle-orm";
 import { db, templates } from "@/lib/db";
 import { requireUser } from "@/lib/auth-user";
@@ -10,6 +11,10 @@ import {
 import { Editor } from "@/components/builder/editor";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Template builder",
+};
 
 export default async function BuilderPage({
   searchParams,

@@ -1,8 +1,13 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { loginAction } from "@/app/actions";
 import { getSessionUser, signupDisabled, userCount } from "@/lib/auth-user";
 import { btnPrimary, inputCls } from "@/components/ui";
+
+export const metadata: Metadata = {
+  title: "Sign in",
+};
 
 export default async function LoginPage({
   searchParams,

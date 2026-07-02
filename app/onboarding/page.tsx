@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { eq } from "drizzle-orm";
 import { db, domains, type Domain } from "@/lib/db";
 import { requireUser } from "@/lib/auth-user";
@@ -17,6 +18,10 @@ import { CopyButton } from "@/components/copy-button";
 import { LiveVerify } from "@/components/domains/live-verify";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Getting started",
+};
 
 type StepKey = "welcome" | "domain" | "key" | "send";
 

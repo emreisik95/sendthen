@@ -61,6 +61,23 @@ docker compose up -d
 
 const GITHUB_URL = "https://github.com/emreisik95/sendthen";
 
+const JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "sendthen",
+  applicationCategory: "DeveloperApplication",
+  operatingSystem: "Web",
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "USD",
+  },
+  url: "https://sendthen.net",
+  sameAs: [GITHUB_URL],
+  description:
+    "Self-hosted transactional email platform. Send, track, deliver.",
+};
+
 function GitHubMark({ className = "" }: { className?: string }) {
   return (
     <svg
@@ -79,6 +96,10 @@ function GitHubMark({ className = "" }: { className?: string }) {
 export default function Landing() {
   return (
     <main className="relative overflow-hidden">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
+      />
       {/* faint grid + lime halo */}
       <div
         aria-hidden

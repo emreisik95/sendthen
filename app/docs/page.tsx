@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 export const metadata: Metadata = {
-  title: "Docs — sendthen",
+  title: "Docs",
   description:
     "SendThen documentation: REST API, SDK reference, webhooks, domains, sandbox mode.",
 };
