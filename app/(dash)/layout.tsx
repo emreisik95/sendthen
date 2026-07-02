@@ -9,10 +9,12 @@ import {
   IconChevronUpDown,
   IconGlobe,
   IconKey,
+  IconLogout,
   IconMail,
   IconSettings,
   IconTeam,
   IconTemplate,
+  IconUser,
   IconUsers,
   IconWebhook,
 } from "@/components/nav-icons";
@@ -89,37 +91,70 @@ export default async function DashLayout({
             <Link
               key={href}
               href={href}
-              className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg"
+              className="nav-link flex items-center gap-3 rounded-md px-3 py-2 text-sm text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg"
             >
-              <Icon className="shrink-0 text-fg-faint" />
+              <Icon className="shrink-0 text-fg-faint transition-colors" />
               {label}
             </Link>
           ))}
         </nav>
 
-        {/* profile footer */}
+        {/* profile menu */}
         <div className="border-t border-line p-3">
-          <div className="flex items-center gap-2.5 px-2 pb-2">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface-3 font-mono text-xs text-fg-muted">
-              {user.email.slice(0, 1).toUpperCase()}
-            </span>
-            <span className="min-w-0 flex-1 truncate text-xs text-fg-muted">
-              {user.email}
-            </span>
-            {user.role === "admin" && (
-              <span className="rounded bg-lime/14 px-1.5 py-0.5 font-mono text-[10px] text-lime">
-                admin
+          <details className="group relative">
+            <summary className="flex cursor-pointer list-none items-center gap-2.5 rounded-md px-2 py-2 transition-colors hover:bg-surface-2 [&::-webkit-details-marker]:hidden">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface-3 font-mono text-xs text-fg-muted">
+                {user.email.slice(0, 1).toUpperCase()}
               </span>
-            )}
-          </div>
-          <form action={logoutAction}>
-            <button
-              type="submit"
-              className="w-full rounded-md px-2 py-1.5 text-left text-xs text-fg-faint transition-colors hover:bg-surface-2 hover:text-fg"
-            >
-              Sign out
-            </button>
-          </form>
+              <span className="min-w-0 flex-1 truncate text-xs text-fg-muted">
+                {user.email}
+              </span>
+              {user.role === "admin" && (
+                <span className="rounded bg-lime/14 px-1.5 py-0.5 font-mono text-[10px] text-lime">
+                  admin
+                </span>
+              )}
+              <IconChevronUpDown className="shrink-0 text-fg-faint" />
+            </summary>
+            <div className="absolute bottom-full left-0 right-0 z-20 mb-1 overflow-hidden rounded-lg border border-line bg-surface-3 py-1 shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
+              <div className="border-b border-hairline px-3 py-2">
+                <div className="truncate text-sm text-fg">{user.name}</div>
+                <div className="truncate font-mono text-xs text-fg-faint">
+                  {user.email}
+                </div>
+              </div>
+              <Link
+                href="/profile"
+                className="nav-link flex items-center gap-2.5 px-3 py-2 text-sm text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg"
+              >
+                <IconUser className="shrink-0 text-fg-faint" />
+                Profile
+              </Link>
+              <Link
+                href="/settings"
+                className="nav-link flex items-center gap-2.5 px-3 py-2 text-sm text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg"
+              >
+                <IconSettings className="shrink-0 text-fg-faint" />
+                Settings
+              </Link>
+              <Link
+                href="/team"
+                className="nav-link flex items-center gap-2.5 px-3 py-2 text-sm text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg"
+              >
+                <IconTeam className="shrink-0 text-fg-faint" />
+                Team
+              </Link>
+              <form action={logoutAction} className="border-t border-hairline">
+                <button
+                  type="submit"
+                  className="nav-link flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-fg-muted transition-colors hover:bg-surface-2 hover:text-danger"
+                >
+                  <IconLogout className="shrink-0 text-fg-faint" />
+                  Sign out
+                </button>
+              </form>
+            </div>
+          </details>
         </div>
       </aside>
       <main className="min-w-0 flex-1 px-8 py-8">{children}</main>

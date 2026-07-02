@@ -146,6 +146,33 @@ export async function logoutAction(): Promise<void> {
   redirect("/login");
 }
 
+/* ---------- profile ---------- */
+
+export async function updateProfileAction(formData: FormData): Promise<void> {
+  const user = await requireUser();
+  const name = String(formData.get("name") ?? "").trim();
+  if (name) {
+    await db.update(users).set({ name }).where(eq(users.id, user.id));
+  }
+  redirect("/profile?saved=1");
+}
+
+export async function changePasswordAction(formData: FormData): Promise<void> {
+  const user = await requireUser();
+  const current = String(formData.get("current") ?? "");
+  const next = String(formData.get("next") ?? "");
+  if (!verifyPassword(current, user.passwordHash)) {
+    redirect("/profile?error=wrong_password");
+  }
+  if (next.length < 8) redirect("/profile?error=weak_password");
+  const { hashPassword } = await import("@/lib/auth-user");
+  await db
+    .update(users)
+    .set({ passwordHash: hashPassword(next) })
+    .where(eq(users.id, user.id));
+  redirect("/profile?saved=1");
+}
+
 /* ---------- teams ---------- */
 
 export async function switchTeamAction(formData: FormData): Promise<void> {

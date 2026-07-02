@@ -151,6 +151,146 @@ body {
   }
 }
 
+/* sidebar icon micro-animations (Resend-style, fire on nav hover) */
+@keyframes st-i-draw {
+  from {
+    stroke-dashoffset: 28;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes st-i-grow {
+  0% {
+    transform: scaleY(0.4);
+  }
+  60% {
+    transform: scaleY(1.15);
+  }
+  100% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes st-i-ripple {
+  0% {
+    opacity: 0.15;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes st-i-wobble {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  30% {
+    transform: rotate(-12deg);
+  }
+  65% {
+    transform: rotate(8deg);
+  }
+}
+
+@keyframes st-i-turn {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  45% {
+    transform: rotate(-28deg);
+  }
+}
+
+@keyframes st-i-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-2.5px);
+  }
+  70% {
+    transform: translateY(1px);
+  }
+}
+
+@keyframes st-i-nudge {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(2.5px);
+  }
+}
+
+@keyframes st-i-knob-l {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(5px);
+  }
+}
+
+@keyframes st-i-knob-r {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(-5px);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .nav-link svg,
+  .nav-link svg * {
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  .nav-link:hover .i-draw {
+    stroke-dasharray: 28;
+    animation: st-i-draw 0.55s ease-out forwards;
+  }
+  .nav-link:hover .i-grow {
+    transform-origin: center bottom;
+    animation: st-i-grow 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .nav-link:hover .i-ripple-1 {
+    animation: st-i-ripple 0.6s ease-out;
+  }
+  .nav-link:hover .i-ripple-2 {
+    animation: st-i-ripple 0.6s ease-out 0.12s;
+  }
+  .nav-link:hover .i-wobble {
+    animation: st-i-wobble 0.6s ease-in-out;
+  }
+  .nav-link:hover .i-turn {
+    animation: st-i-turn 0.6s ease-in-out;
+  }
+  .nav-link:hover .i-bounce {
+    animation: st-i-bounce 0.5s ease-out;
+  }
+  .nav-link:hover .i-nudge {
+    animation: st-i-nudge 0.5s ease-out;
+  }
+  .nav-link:hover .i-knob-l {
+    animation: st-i-knob-l 0.55s ease-in-out;
+  }
+  .nav-link:hover .i-knob-r {
+    animation: st-i-knob-r 0.55s ease-in-out;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
