@@ -333,6 +333,8 @@ export const templates = sqliteTable(
     subject: text("subject").notNull(),
     html: text("html"),
     text: text("text"),
+    // builder design JSON — present when created with the visual builder
+    design: text("design", { mode: "json" }).$type<Record<string, unknown>>(),
     createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
     updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
   },

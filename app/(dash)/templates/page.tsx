@@ -32,10 +32,15 @@ export default async function TemplatesPage({
 
   return (
     <div className="mx-auto max-w-4xl">
-      <PageHeader title="Templates" />
+      <PageHeader title="Templates">
+        <a href="/templates/builder" className={btnPrimary}>
+          Open builder →
+        </a>
+      </PageHeader>
       <p className="mb-6 text-sm text-fg-muted">
         Reusable emails with <code className="font-mono text-fg">{"{{variables}}"}</code>.
-        Send them via <code className="font-mono text-fg">template_id</code> +{" "}
+        Build visually with the no-code builder, or paste HTML below. Send via{" "}
+        <code className="font-mono text-fg">template_id</code> +{" "}
         <code className="font-mono text-fg">variables</code>.
       </p>
 
@@ -97,12 +102,21 @@ export default async function TemplatesPage({
               <span className="font-mono text-xs text-fg-faint">
                 {fmtDate(t.updatedAt)}
               </span>
-              <a
-                href={`/templates?edit=${t.id}`}
-                className="rounded-md border border-line px-3 py-1.5 text-xs text-fg transition-colors hover:bg-surface-2"
-              >
-                Edit
-              </a>
+              {t.design ? (
+                <a
+                  href={`/templates/builder?id=${t.id}`}
+                  className="rounded-md border border-lime/40 px-3 py-1.5 text-xs text-lime transition-colors hover:bg-surface-2"
+                >
+                  Open in builder
+                </a>
+              ) : (
+                <a
+                  href={`/templates?edit=${t.id}`}
+                  className="rounded-md border border-line px-3 py-1.5 text-xs text-fg transition-colors hover:bg-surface-2"
+                >
+                  Edit
+                </a>
+              )}
               <form action={deleteTemplateAction}>
                 <input type="hidden" name="id" value={t.id} />
                 <button type="submit" className={btnDanger}>

@@ -22,6 +22,13 @@
       "when": 1782976445435,
       "tag": "0002_brainy_manta",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1782977629164,
+      "tag": "0003_tiresome_spencer_smythe",
+      "breakpoints": true
     }
   ]
 }

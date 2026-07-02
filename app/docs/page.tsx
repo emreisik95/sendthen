@@ -247,7 +247,12 @@ docker run -p 3000:3000 -v sendthen-data:/data -e ADMIN_PASSWORD=... sendthen`}<
         <Section id="templates" title="Templates">
           <P>
             Store reusable emails with <Mono>{"{{variables}}"}</Mono> in
-            subject and body, then send by id:
+            subject and body, then send by id. The dashboard includes a{" "}
+            <b>no-code visual builder</b> (Templates → Open builder): compose
+            from blocks — logo, headings, buttons, images, columns, OTP code,
+            social links, footer with unsubscribe — and it compiles to
+            table-based, inline-styled, email-client-safe HTML. Built
+            templates stay re-editable.
           </P>
           <Code>{`POST /api/v1/templates        { "name": "welcome", "subject": "Hi {{name}}", "html": "<h1>Hey {{name}}</h1>" }
 GET  /api/v1/templates        list

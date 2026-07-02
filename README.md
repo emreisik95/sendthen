@@ -11,7 +11,7 @@
 - **Tracking** — signed open pixel + click redirects, `email.opened` / `email.clicked` events.
 - **Webhooks** — svix-compatible HMAC signatures, 5× retry with backoff, delivery log.
 - **Broadcasts** — audiences + contacts, per-contact `{{variables}}`, RFC 8058 one-click unsubscribe.
-- **Templates** — reusable subject/html/text with `{{variable}}` rendering.
+- **Templates** — reusable subject/html/text with `{{variable}}` rendering, plus a **no-code visual builder** (blocks → email-client-safe table HTML, re-editable designs, starter presets).
 - **Analytics** — daily volume by status, delivery/open/click rates.
 
 ## Quick start (Docker)
