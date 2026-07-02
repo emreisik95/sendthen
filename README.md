@@ -10,7 +10,7 @@
 [![Self-hosted](https://img.shields.io/badge/self--hosted-yes-38BDF8?style=flat)](#deploying)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat)](#contributing)
 
-[Live demo](https://sendthen.external.emre.zip) · [Docs](https://sendthen.external.emre.zip/docs) · [Report a bug](https://github.com/emreisik95/sendthen/issues)
+[Live demo](https://sendthen.net) · [Docs](https://sendthen.net/docs) · [Report a bug](https://github.com/emreisik95/sendthen/issues)
 
 ![sendthen dashboard — emails](.github/screenshots/emails.png)
 
@@ -110,7 +110,7 @@ POST/GET /api/v1/audiences         create / list · GET/DELETE /:id · /:id/cont
 POST/GET /api/v1/broadcasts        draft · POST /:id/send fans out
 ```
 
-Webhook events: `email.queued|sent|delivered|bounced|complained|failed|canceled|opened|clicked`, HMAC-signed with svix-compatible headers. The **full API reference ships at `/docs` on every instance** — [see the demo's](https://sendthen.external.emre.zip/docs).
+Webhook events: `email.queued|sent|delivered|bounced|complained|failed|canceled|opened|clicked`, HMAC-signed with svix-compatible headers. The **full API reference ships at `/docs` on every instance** — [see the demo's](https://sendthen.net/docs).
 
 A zero-dependency TypeScript SDK lives in [`sdk/`](./sdk) (Node 18+, Bun, Deno, edge — anything with `fetch`):
 
