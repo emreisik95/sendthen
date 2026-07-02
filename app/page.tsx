@@ -245,6 +245,62 @@ export default function Landing() {
           </ul>
         </section>
 
+        {/* pricing */}
+        <section className="pb-24">
+          <h2 className="mb-3 text-center text-[28px] font-semibold tracking-tight">
+            Simple <span className="text-lime">pricing.</span>
+          </h2>
+          <p className="mx-auto mb-10 max-w-md text-center text-sm text-fg-muted">
+            Hosted plans that stay cheaper than the incumbents — or self-host
+            and pay nothing, forever.
+          </p>
+          <div className="mx-auto grid max-w-3xl gap-4 sm:grid-cols-3">
+            {[
+              {
+                name: "Free",
+                price: "$0",
+                items: ["100 emails / day", "3,000 / month", "every feature included"],
+              },
+              {
+                name: "Pro",
+                price: "$10/mo",
+                items: [
+                  "50,000 emails / month",
+                  "no daily cap",
+                  "$0.50 per extra 1,000",
+                ],
+                featured: true,
+              },
+              {
+                name: "Self-hosted",
+                price: "free",
+                items: ["unlimited everything", "your server, your data", "MIT licensed"],
+              },
+            ].map((p) => (
+              <div
+                key={p.name}
+                className={`rounded-[10px] border p-6 ${
+                  p.featured
+                    ? "border-lime/50 bg-surface"
+                    : "border-line bg-surface"
+                }`}
+              >
+                <div className="flex items-baseline justify-between">
+                  <h3 className="font-medium">{p.name}</h3>
+                  <span className="font-mono text-lg text-lime">{p.price}</span>
+                </div>
+                <ul className="mt-4 space-y-1.5 text-sm text-fg-muted">
+                  {p.items.map((i) => (
+                    <li key={i}>
+                      <span className="text-lime">✓</span> {i}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </section>
+
         {/* self-host */}
         <section className="pb-24">
           <h2 className="mb-6 text-center text-[28px] font-semibold tracking-tight">

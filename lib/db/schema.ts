@@ -27,6 +27,7 @@ export const users = sqliteTable(
 export const teams = sqliteTable("teams", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
+  plan: text("plan", { enum: ["free", "pro"] }).notNull().default("free"),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
 });
 

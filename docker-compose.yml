@@ -17,6 +17,8 @@ services:
       # inbound email: SMTP listener port (empty = off) + HTTP ingest key
       SENDTHEN_SMTP_PORT: ${SENDTHEN_SMTP_PORT:-}
       SENDTHEN_INGEST_KEY: ${SENDTHEN_INGEST_KEY:-}
+      # self-hosted default: no plan limits
+      SENDTHEN_UNLIMITED: ${SENDTHEN_UNLIMITED:-true}
     volumes:
       - sendthen-data:/data
     restart: unless-stopped

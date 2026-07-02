@@ -1,10 +1,12 @@
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
-import { db, domains, emails, templates, userSettings } from "./db";
+import { db, domains, emails, teams, templates, userSettings } from "./db";
 import { newEmailId } from "./id";
 import { mailMode } from "./mailer";
 import { recordEvent } from "./events";
 import { suppressedAmong } from "./suppress";
+import { enforceQuota } from "./quota";
+import { SendError } from "./errors";
 
 const toArray = z
   .union([z.string(), z.array(z.string()).min(1).max(50)])
@@ -53,15 +55,7 @@ export const sendSchema = z
 
 export type SendInput = z.infer<typeof sendSchema>;
 
-export class SendError extends Error {
-  constructor(
-    public statusCode: number,
-    public code: string,
-    message: string,
-  ) {
-    super(message);
-  }
-}
+export { SendError };
 
 /** {{variable}} substitution for templates. */
 export function renderTemplate(
@@ -109,6 +103,10 @@ export async function createEmail(
       );
     if (existing) return { id: existing.id };
   }
+
+  // plan limits before anything is written
+  const [team] = await db.select().from(teams).where(eq(teams.id, teamId));
+  if (team) await enforceQuota(team);
 
   const domainName = fromDomain(data.from);
   if (!domainName) {

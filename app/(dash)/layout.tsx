@@ -11,6 +11,7 @@ import {
   IconBan,
   IconBook,
   IconBroadcast,
+  IconCard,
   IconChart,
   IconChevronUpDown,
   IconGitHub,
@@ -39,6 +40,7 @@ const NAV = [
   { href: "/webhooks", label: "Webhooks", icon: IconWebhook },
   { href: "/suppressions", label: "Suppressions", icon: IconBan },
   { href: "/team", label: "Team", icon: IconTeam },
+  { href: "/billing", label: "Billing", icon: IconCard },
   { href: "/settings", label: "Settings", icon: IconSettings },
 ];
 

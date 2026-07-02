@@ -141,24 +141,33 @@ export async function sendEmail(
   }
 
   if (mode === "ses") {
-    if (
-      !settings?.sesAccessKeyId ||
-      !settings?.sesSecretAccessKey ||
-      !settings?.sesRegion
-    ) {
+    // team credentials win; the instance-level SES account is the fallback
+    // that powers "Instance default" real delivery
+    const creds =
+      settings?.sesAccessKeyId &&
+      settings.sesSecretAccessKey &&
+      settings.sesRegion
+        ? {
+            accessKeyId: settings.sesAccessKeyId,
+            secretAccessKey: decryptSecret(settings.sesSecretAccessKey),
+            region: settings.sesRegion,
+          }
+        : process.env.SENDTHEN_SES_ACCESS_KEY_ID &&
+            process.env.SENDTHEN_SES_SECRET_ACCESS_KEY &&
+            process.env.SENDTHEN_SES_REGION
+          ? {
+              accessKeyId: process.env.SENDTHEN_SES_ACCESS_KEY_ID,
+              secretAccessKey: process.env.SENDTHEN_SES_SECRET_ACCESS_KEY,
+              region: process.env.SENDTHEN_SES_REGION,
+            }
+          : null;
+    if (!creds) {
       throw new Error(
-        "SES mode selected but credentials are incomplete (key, secret, region)",
+        "SES mode selected but no credentials are configured (team settings or instance env)",
       );
     }
-    const sesId = await sendViaSes(
-      {
-        accessKeyId: settings.sesAccessKeyId,
-        secretAccessKey: decryptSecret(settings.sesSecretAccessKey),
-        region: settings.sesRegion,
-      },
-      raw,
-    );
-    return { messageId: `<${sesId}@${settings.sesRegion}.amazonses.com>` };
+    const sesId = await sendViaSes(creds, raw);
+    return { messageId: `<${sesId}@${creds.region}.amazonses.com>` };
   }
 
   // direct

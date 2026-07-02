@@ -134,6 +134,13 @@ export const IconGitHub = (p: SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
+export const IconCard = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}>
+    <rect x="3" y="6" width="18" height="13" rx="2" />
+    <path className="i-draw" d="M3 10h18M7 15h4" />
+  </svg>
+);
+
 export const IconChevronUpDown = (p: SVGProps<SVGSVGElement>) => (
   <svg {...base(p)}>
     <path d="m8 9 4-4 4 4M8 15l4 4 4-4" />
