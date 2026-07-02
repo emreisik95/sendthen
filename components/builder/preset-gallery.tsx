@@ -169,18 +169,30 @@ export function PresetCard({
   preset: EditorPreset;
   onApply: (key: string) => void;
 }) {
+  // the info band inherits the theme's own colors so cards stay coherent
+  // on both the light canvas and the dark popover
+  const { styles } = preset.design;
   return (
     <button
       type="button"
       onClick={() => onApply(preset.key)}
-      className="group overflow-hidden rounded-lg border border-line bg-surface text-left transition-all hover:-translate-y-0.5 hover:border-lime/50"
+      className="group overflow-hidden rounded-lg text-left shadow-sm ring-1 ring-black/10 transition-all hover:-translate-y-0.5 hover:ring-2 hover:ring-lime"
     >
       <PresetPreview design={preset.design} />
-      <div className="border-t border-line px-3 py-2.5">
-        <div className="text-sm text-fg transition-colors group-hover:text-lime">
+      <div
+        className="px-3 py-2.5"
+        style={{
+          background: styles.backgroundColor,
+          borderTop: `1px solid ${styles.textColor}1a`,
+        }}
+      >
+        <div className="text-sm font-medium" style={{ color: styles.textColor }}>
           {preset.name}
         </div>
-        <div className="mt-0.5 line-clamp-2 text-xs leading-snug text-fg-faint">
+        <div
+          className="mt-0.5 line-clamp-2 text-xs leading-snug"
+          style={{ color: styles.textColor, opacity: 0.55 }}
+        >
           {preset.description}
         </div>
       </div>
