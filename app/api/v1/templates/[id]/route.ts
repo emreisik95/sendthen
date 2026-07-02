@@ -22,7 +22,7 @@ export async function GET(
   const [tpl] = await db
     .select()
     .from(templates)
-    .where(and(eq(templates.id, id), eq(templates.userId, auth.userId!)));
+    .where(and(eq(templates.id, id), eq(templates.teamId, auth.teamId!)));
   if (!tpl) return apiError(404, "not_found", "Template not found.");
   return NextResponse.json({
     id: tpl.id,
@@ -57,7 +57,7 @@ export async function PATCH(
   const updated = await db
     .update(templates)
     .set({ ...parsed.data, updatedAt: new Date() })
-    .where(and(eq(templates.id, id), eq(templates.userId, auth.userId!)))
+    .where(and(eq(templates.id, id), eq(templates.teamId, auth.teamId!)))
     .returning({ id: templates.id });
   if (updated.length === 0) {
     return apiError(404, "not_found", "Template not found.");
@@ -75,7 +75,7 @@ export async function DELETE(
   const { id } = await params;
   const deleted = await db
     .delete(templates)
-    .where(and(eq(templates.id, id), eq(templates.userId, auth.userId!)))
+    .where(and(eq(templates.id, id), eq(templates.teamId, auth.teamId!)))
     .returning({ id: templates.id });
   if (deleted.length === 0) {
     return apiError(404, "not_found", "Template not found.");

@@ -19,7 +19,7 @@ export async function POST(
       and(
         eq(emails.id, id),
         eq(emails.status, "queued"),
-        eq(emails.userId, auth.userId!),
+        eq(emails.teamId, auth.teamId!),
       ),
     )
     .returning();

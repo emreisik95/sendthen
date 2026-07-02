@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { and, asc, eq } from "drizzle-orm";
 import { db, emailEvents, emails } from "@/lib/db";
 import { requireUser } from "@/lib/auth-user";
+import { getActiveTeam } from "@/lib/team";
 import { Card, PageHeader, StatusPill, fmtDate } from "@/components/ui";
 import { CopyButton } from "@/components/copy-button";
 
@@ -14,11 +15,12 @@ export default async function EmailDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const user = await requireUser();
+  const { team } = await getActiveTeam(user);
   const { id } = await params;
   const [email] = await db
     .select()
     .from(emails)
-    .where(and(eq(emails.id, id), eq(emails.userId, user.id)));
+    .where(and(eq(emails.id, id), eq(emails.teamId, team.id)));
   if (!email) notFound();
 
   const events = await db

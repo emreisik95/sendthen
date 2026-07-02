@@ -59,7 +59,7 @@ export async function sendBroadcast(
         unsubscribe_url: unsubscribeUrl(contact.id),
       };
       try {
-        await createEmail(broadcast.userId, null, {
+        await createEmail(broadcast.teamId!, broadcast.userId, null, {
           from: broadcast.from,
           to: [contact.email],
           subject: renderTemplate(broadcast.subject, vars),

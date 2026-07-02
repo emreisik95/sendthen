@@ -1,6 +1,7 @@
 import { desc, eq } from "drizzle-orm";
 import { db, templates } from "@/lib/db";
 import { requireUser } from "@/lib/auth-user";
+import { getActiveTeam } from "@/lib/team";
 import { deleteTemplateAction, saveTemplateAction } from "@/app/actions";
 import {
   Card,
@@ -20,11 +21,12 @@ export default async function TemplatesPage({
   searchParams: Promise<{ edit?: string }>;
 }) {
   const user = await requireUser();
+  const { team } = await getActiveTeam(user);
   const { edit } = await searchParams;
   const rows = await db
     .select()
     .from(templates)
-    .where(eq(templates.userId, user.id))
+    .where(eq(templates.teamId, team.id))
     .orderBy(desc(templates.updatedAt));
   const editing = edit ? rows.find((t) => t.id === edit) : undefined;
 

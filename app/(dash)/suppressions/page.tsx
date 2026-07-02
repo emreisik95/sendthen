@@ -1,6 +1,7 @@
 import { desc, eq } from "drizzle-orm";
 import { db, suppressions } from "@/lib/db";
 import { requireUser } from "@/lib/auth-user";
+import { getActiveTeam } from "@/lib/team";
 import {
   addSuppressionAction,
   removeSuppressionAction,
@@ -19,10 +20,11 @@ export const dynamic = "force-dynamic";
 
 export default async function SuppressionsPage() {
   const user = await requireUser();
+  const { team } = await getActiveTeam(user);
   const rows = await db
     .select()
     .from(suppressions)
-    .where(eq(suppressions.userId, user.id))
+    .where(eq(suppressions.teamId, team.id))
     .orderBy(desc(suppressions.createdAt))
     .limit(200);
 

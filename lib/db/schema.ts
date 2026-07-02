@@ -22,6 +22,51 @@ export const users = sqliteTable(
   (t) => [index("users_email_idx").on(t.email)],
 );
 
+export const teams = sqliteTable("teams", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+});
+
+export const teamMembers = sqliteTable(
+  "team_members",
+  {
+    id: text("id").primaryKey(),
+    teamId: text("team_id")
+      .notNull()
+      .references(() => teams.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    role: text("role", { enum: ["owner", "member"] })
+      .notNull()
+      .default("member"),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+  },
+  (t) => [
+    uniqueIndex("team_members_unique_idx").on(t.teamId, t.userId),
+    index("team_members_user_idx").on(t.userId),
+  ],
+);
+
+export const invites = sqliteTable(
+  "invites",
+  {
+    id: text("id").primaryKey(),
+    teamId: text("team_id")
+      .notNull()
+      .references(() => teams.id, { onDelete: "cascade" }),
+    email: text("email").notNull(),
+    role: text("role", { enum: ["owner", "member"] })
+      .notNull()
+      .default("member"),
+    token: text("token").notNull().unique(),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+    acceptedAt: integer("accepted_at", { mode: "timestamp_ms" }),
+  },
+  (t) => [index("invites_team_idx").on(t.teamId)],
+);
+
 export const sessions = sqliteTable(
   "sessions",
   {
@@ -36,13 +81,16 @@ export const sessions = sqliteTable(
   (t) => [index("sessions_user_idx").on(t.userId)],
 );
 
-/** Per-user mail transport + tracking settings. */
+/** Per-team mail transport + tracking settings (legacy table name). */
 export const userSettings = sqliteTable("user_settings", {
   id: text("id").primaryKey(),
   userId: text("user_id")
     .notNull()
     .unique()
     .references(() => users.id, { onDelete: "cascade" }),
+  teamId: text("team_id")
+    .unique()
+    .references(() => teams.id, { onDelete: "cascade" }),
   mailMode: text("mail_mode", {
     enum: ["inherit", "sandbox", "smtp", "ses"],
   })
@@ -68,6 +116,9 @@ export const apiKeys = sqliteTable(
     userId: text("user_id").references(() => users.id, {
       onDelete: "cascade",
     }),
+    teamId: text("team_id").references(() => teams.id, {
+      onDelete: "cascade",
+    }),
     name: text("name").notNull(),
     // sha256 of full token; raw token shown once at creation
     tokenHash: text("token_hash").notNull().unique(),
@@ -86,6 +137,7 @@ export const apiKeys = sqliteTable(
 export const domains = sqliteTable("domains", {
   id: text("id").primaryKey(),
   userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
+  teamId: text("team_id").references(() => teams.id, { onDelete: "cascade" }),
   name: text("name").notNull().unique(),
   status: text("status", {
     enum: ["pending", "verified", "failed"],
@@ -119,6 +171,9 @@ export const emails = sqliteTable(
   {
     id: text("id").primaryKey(),
     userId: text("user_id").references(() => users.id, {
+      onDelete: "cascade",
+    }),
+    teamId: text("team_id").references(() => teams.id, {
       onDelete: "cascade",
     }),
     domainId: text("domain_id").references(() => domains.id),
@@ -173,6 +228,7 @@ export const emails = sqliteTable(
     index("emails_created_idx").on(t.createdAt),
     index("emails_idem_idx").on(t.idempotencyKey),
     index("emails_user_idx").on(t.userId, t.createdAt),
+    index("emails_team_idx").on(t.teamId, t.createdAt),
     index("emails_broadcast_idx").on(t.broadcastId),
   ],
 );
@@ -209,6 +265,7 @@ export const emailEvents = sqliteTable(
 export const webhooks = sqliteTable("webhooks", {
   id: text("id").primaryKey(),
   userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
+  teamId: text("team_id").references(() => teams.id, { onDelete: "cascade" }),
   url: text("url").notNull(),
   // whsec_-prefixed HMAC secret
   secret: text("secret").notNull(),
@@ -247,13 +304,19 @@ export const suppressions = sqliteTable(
     userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
+    teamId: text("team_id").references(() => teams.id, {
+      onDelete: "cascade",
+    }),
     email: text("email").notNull(),
     reason: text("reason", {
       enum: ["bounce", "complaint", "manual", "failed"],
     }).notNull(),
     createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
   },
-  (t) => [uniqueIndex("suppressions_user_email_idx").on(t.userId, t.email)],
+  (t) => [
+    uniqueIndex("suppressions_user_email_idx").on(t.userId, t.email),
+    index("suppressions_team_idx").on(t.teamId, t.email),
+  ],
 );
 
 export const templates = sqliteTable(
@@ -263,6 +326,9 @@ export const templates = sqliteTable(
     userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
+    teamId: text("team_id").references(() => teams.id, {
+      onDelete: "cascade",
+    }),
     name: text("name").notNull(),
     subject: text("subject").notNull(),
     html: text("html"),
@@ -280,6 +346,9 @@ export const audiences = sqliteTable(
     userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
+    teamId: text("team_id").references(() => teams.id, {
+      onDelete: "cascade",
+    }),
     name: text("name").notNull(),
     createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
   },
@@ -313,6 +382,9 @@ export const broadcasts = sqliteTable(
     userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
+    teamId: text("team_id").references(() => teams.id, {
+      onDelete: "cascade",
+    }),
     audienceId: text("audience_id")
       .notNull()
       .references(() => audiences.id),
@@ -332,6 +404,9 @@ export const broadcasts = sqliteTable(
 );
 
 export type User = typeof users.$inferSelect;
+export type Team = typeof teams.$inferSelect;
+export type TeamMember = typeof teamMembers.$inferSelect;
+export type Invite = typeof invites.$inferSelect;
 export type Session = typeof sessions.$inferSelect;
 export type UserSettings = typeof userSettings.$inferSelect;
 export type ApiKey = typeof apiKeys.$inferSelect;

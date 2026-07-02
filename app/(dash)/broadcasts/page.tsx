@@ -1,6 +1,7 @@
 import { desc, eq } from "drizzle-orm";
 import { db, audiences, broadcasts } from "@/lib/db";
 import { requireUser } from "@/lib/auth-user";
+import { getActiveTeam } from "@/lib/team";
 import {
   createBroadcastAction,
   deleteBroadcastAction,
@@ -34,16 +35,17 @@ export default async function BroadcastsPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const user = await requireUser();
+  const { team } = await getActiveTeam(user);
   const { error } = await searchParams;
   const myAudiences = await db
     .select()
     .from(audiences)
-    .where(eq(audiences.userId, user.id))
+    .where(eq(audiences.teamId, team.id))
     .orderBy(desc(audiences.createdAt));
   const rows = await db
     .select()
     .from(broadcasts)
-    .where(eq(broadcasts.userId, user.id))
+    .where(eq(broadcasts.teamId, team.id))
     .orderBy(desc(broadcasts.createdAt));
 
   return (

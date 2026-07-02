@@ -16,7 +16,7 @@ export async function POST(
   const [broadcast] = await db
     .select()
     .from(broadcasts)
-    .where(and(eq(broadcasts.id, id), eq(broadcasts.userId, auth.userId!)));
+    .where(and(eq(broadcasts.id, id), eq(broadcasts.teamId, auth.teamId!)));
   if (!broadcast) return apiError(404, "not_found", "Broadcast not found.");
 
   try {

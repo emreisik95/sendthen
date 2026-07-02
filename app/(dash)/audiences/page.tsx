@@ -2,6 +2,7 @@ import Link from "next/link";
 import { desc, eq, count } from "drizzle-orm";
 import { db, audiences, contacts } from "@/lib/db";
 import { requireUser } from "@/lib/auth-user";
+import { getActiveTeam } from "@/lib/team";
 import { createAudienceAction } from "@/app/actions";
 import {
   Card,
@@ -16,6 +17,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AudiencesPage() {
   const user = await requireUser();
+  const { team } = await getActiveTeam(user);
   const rows = await db
     .select({
       audience: audiences,
@@ -23,7 +25,7 @@ export default async function AudiencesPage() {
     })
     .from(audiences)
     .leftJoin(contacts, eq(contacts.audienceId, audiences.id))
-    .where(eq(audiences.userId, user.id))
+    .where(eq(audiences.teamId, team.id))
     .groupBy(audiences.id)
     .orderBy(desc(audiences.createdAt));
 

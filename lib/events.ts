@@ -34,16 +34,16 @@ export async function recordEvent(
     .returning();
 
   const [email] = await db
-    .select({ userId: emails.userId })
+    .select({ teamId: emails.teamId })
     .from(emails)
     .where(eq(emails.id, emailId));
 
-  const hooks = email?.userId
+  const hooks = email?.teamId
     ? await db
         .select()
         .from(webhooks)
         .where(
-          and(eq(webhooks.enabled, true), eq(webhooks.userId, email.userId)),
+          and(eq(webhooks.enabled, true), eq(webhooks.teamId, email.teamId)),
         )
     : [];
   const matching = hooks.filter((h) => h.events.includes(type));

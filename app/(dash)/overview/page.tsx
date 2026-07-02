@@ -1,6 +1,7 @@
 import { and, eq, gte, inArray } from "drizzle-orm";
 import { db, emailEvents, emails } from "@/lib/db";
 import { requireUser } from "@/lib/auth-user";
+import { getActiveTeam } from "@/lib/team";
 import { Card, PageHeader } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
@@ -27,13 +28,14 @@ function bucketOf(status: string): SegKey {
 
 export default async function OverviewPage() {
   const user = await requireUser();
+  const { team } = await getActiveTeam(user);
   const since = new Date(Date.now() - DAYS * 86_400_000);
   since.setHours(0, 0, 0, 0);
 
   const rows = await db
     .select({ status: emails.status, createdAt: emails.createdAt, id: emails.id })
     .from(emails)
-    .where(and(eq(emails.userId, user.id), gte(emails.createdAt, since)));
+    .where(and(eq(emails.teamId, team.id), gte(emails.createdAt, since)));
 
   // day buckets, oldest → newest
   const days: { label: string; key: string; counts: Record<SegKey, number> }[] =

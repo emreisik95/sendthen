@@ -15,7 +15,7 @@ export async function GET(
   const [domain] = await db
     .select()
     .from(domains)
-    .where(and(eq(domains.id, id), eq(domains.userId, auth.userId!)));
+    .where(and(eq(domains.id, id), eq(domains.teamId, auth.teamId!)));
   if (!domain) return apiError(404, "not_found", "Domain not found.");
   return NextResponse.json(domainResponse(domain));
 }
@@ -30,7 +30,7 @@ export async function DELETE(
   const { id } = await params;
   const deleted = await db
     .delete(domains)
-    .where(and(eq(domains.id, id), eq(domains.userId, auth.userId!)))
+    .where(and(eq(domains.id, id), eq(domains.teamId, auth.teamId!)))
     .returning({ id: domains.id });
   if (deleted.length === 0) {
     return apiError(404, "not_found", "Domain not found.");

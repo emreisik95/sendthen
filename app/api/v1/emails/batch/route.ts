@@ -26,7 +26,7 @@ export async function POST(req: Request) {
   const data: { id: string }[] = [];
   try {
     for (const item of parsed.data) {
-      data.push(await createEmail(auth.userId!, auth.id, item));
+      data.push(await createEmail(auth.teamId!, auth.userId, auth.id, item));
     }
   } catch (err) {
     if (err instanceof SendError) {

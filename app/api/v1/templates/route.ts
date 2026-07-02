@@ -37,6 +37,7 @@ export async function POST(req: Request) {
     .values({
       id: newTemplateId(),
       userId: auth.userId!,
+      teamId: auth.teamId,
       name: parsed.data.name,
       subject: parsed.data.subject,
       html: parsed.data.html ?? null,
@@ -59,7 +60,7 @@ export async function GET(req: Request) {
   const rows = await db
     .select()
     .from(templates)
-    .where(eq(templates.userId, auth.userId!))
+    .where(eq(templates.teamId, auth.teamId!))
     .orderBy(desc(templates.updatedAt));
 
   return NextResponse.json({

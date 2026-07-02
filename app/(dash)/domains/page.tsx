@@ -2,6 +2,7 @@ import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
 import { db, domains } from "@/lib/db";
 import { requireUser } from "@/lib/auth-user";
+import { getActiveTeam } from "@/lib/team";
 import { createDomainAction } from "@/app/actions";
 import {
   Card,
@@ -17,10 +18,11 @@ export const dynamic = "force-dynamic";
 
 export default async function DomainsPage() {
   const user = await requireUser();
+  const { team } = await getActiveTeam(user);
   const rows = await db
     .select()
     .from(domains)
-    .where(eq(domains.userId, user.id))
+    .where(eq(domains.teamId, team.id))
     .orderBy(desc(domains.createdAt));
 
   return (

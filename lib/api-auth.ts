@@ -47,11 +47,11 @@ export async function requireApiKey(
   if (!key) {
     return apiError(401, "invalid_api_key", "API key is invalid or revoked.");
   }
-  if (!key.userId) {
+  if (!key.teamId) {
     return apiError(
       401,
       "orphan_api_key",
-      "This key predates multi-user support. Sign up in the dashboard to claim it.",
+      "This key is not attached to a team yet. Sign in to the dashboard once to claim it.",
     );
   }
 

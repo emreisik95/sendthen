@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { and, eq } from "drizzle-orm";
 import { db, domains } from "@/lib/db";
 import { requireUser } from "@/lib/auth-user";
+import { getActiveTeam } from "@/lib/team";
 import { dnsRecordsForDomain } from "@/lib/dkim";
 import { deleteDomainAction, verifyDomainAction } from "@/app/actions";
 import {
@@ -23,11 +24,12 @@ export default async function DomainDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const user = await requireUser();
+  const { team } = await getActiveTeam(user);
   const { id } = await params;
   const [domain] = await db
     .select()
     .from(domains)
-    .where(and(eq(domains.id, id), eq(domains.userId, user.id)));
+    .where(and(eq(domains.id, id), eq(domains.teamId, team.id)));
   if (!domain) notFound();
 
   const records = dnsRecordsForDomain(

@@ -4,6 +4,7 @@ import path from "node:path";
 import fs from "node:fs";
 import type { Domain, Email, UserSettings } from "./db";
 import { sendViaSes } from "./providers/ses";
+import { decryptSecret } from "./crypto";
 
 export type MailMode = "sandbox" | "smtp" | "direct" | "ses";
 
@@ -121,7 +122,9 @@ export async function sendEmail(
   };
 
   if (mode === "smtp") {
-    const url = settings?.smtpUrl || process.env.SMTP_URL;
+    const url = settings?.smtpUrl
+      ? decryptSecret(settings.smtpUrl)
+      : process.env.SMTP_URL;
     if (!url) throw new Error("SMTP mode selected but no SMTP URL configured");
     const info = await nodemailer.createTransport(url).sendMail(message);
     return { messageId: info.messageId };
@@ -150,7 +153,7 @@ export async function sendEmail(
     const sesId = await sendViaSes(
       {
         accessKeyId: settings.sesAccessKeyId,
-        secretAccessKey: settings.sesSecretAccessKey,
+        secretAccessKey: decryptSecret(settings.sesSecretAccessKey),
         region: settings.sesRegion,
       },
       raw,

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { and, desc, eq } from "drizzle-orm";
 import { db, audiences, contacts } from "@/lib/db";
 import { requireUser } from "@/lib/auth-user";
+import { getActiveTeam } from "@/lib/team";
 import {
   addContactAction,
   deleteAudienceAction,
@@ -26,11 +27,12 @@ export default async function AudienceDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const user = await requireUser();
+  const { team } = await getActiveTeam(user);
   const { id } = await params;
   const [audience] = await db
     .select()
     .from(audiences)
-    .where(and(eq(audiences.id, id), eq(audiences.userId, user.id)));
+    .where(and(eq(audiences.id, id), eq(audiences.teamId, team.id)));
   if (!audience) notFound();
 
   const rows = await db

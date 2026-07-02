@@ -2,16 +2,18 @@ import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
 import { db, emails } from "@/lib/db";
 import { requireUser } from "@/lib/auth-user";
+import { getActiveTeam } from "@/lib/team";
 import { Empty, PageHeader, StatusPill, Card, fmtDate } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
 export default async function EmailsPage() {
   const user = await requireUser();
+  const { team } = await getActiveTeam(user);
   const rows = await db
     .select()
     .from(emails)
-    .where(eq(emails.userId, user.id))
+    .where(eq(emails.teamId, team.id))
     .orderBy(desc(emails.createdAt))
     .limit(100);
 

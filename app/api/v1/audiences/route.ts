@@ -27,6 +27,7 @@ export async function POST(req: Request) {
     .values({
       id: newAudienceId(),
       userId: auth.userId!,
+      teamId: auth.teamId,
       name: parsed.data.name,
       createdAt: new Date(),
     })
@@ -48,7 +49,7 @@ export async function GET(req: Request) {
   const rows = await db
     .select()
     .from(audiences)
-    .where(eq(audiences.userId, auth.userId!))
+    .where(eq(audiences.teamId, auth.teamId!))
     .orderBy(desc(audiences.createdAt));
   return NextResponse.json({
     data: rows.map((a) => ({

@@ -1,6 +1,7 @@
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { db, apiKeys } from "@/lib/db";
 import { requireUser } from "@/lib/auth-user";
+import { getActiveTeam } from "@/lib/team";
 import { createApiKeyAction, revokeApiKeyAction } from "@/app/actions";
 import {
   Card,
@@ -21,11 +22,12 @@ export default async function ApiKeysPage({
   searchParams: Promise<{ token?: string }>;
 }) {
   const user = await requireUser();
+  const { team } = await getActiveTeam(user);
   const { token } = await searchParams;
   const rows = await db
     .select()
     .from(apiKeys)
-    .where(and(isNull(apiKeys.revokedAt), eq(apiKeys.userId, user.id)))
+    .where(and(isNull(apiKeys.revokedAt), eq(apiKeys.teamId, team.id)))
     .orderBy(desc(apiKeys.createdAt));
 
   return (

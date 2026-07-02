@@ -13,12 +13,14 @@ const ERRORS: Record<string, string> = {
 export default async function SignupPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; invite?: string }>;
 }) {
-  if (await getSessionUser()) redirect("/emails");
+  const { error, invite } = await searchParams;
+  if (await getSessionUser()) redirect(invite ? `/invite/${invite}` : "/emails");
   const isFirst = (await userCount()) === 0;
-  if (signupDisabled() && !isFirst) redirect("/login?error=signup_disabled");
-  const { error } = await searchParams;
+  if (signupDisabled() && !isFirst && !invite) {
+    redirect("/login?error=signup_disabled");
+  }
 
   return (
     <main className="flex min-h-screen items-center justify-center px-4">
@@ -30,13 +32,16 @@ export default async function SignupPage({
           <p className="mt-2 text-sm text-fg-muted">
             {isFirst
               ? "Create the admin account for this instance"
-              : "Create your account"}
+              : invite
+                ? "Create your account to join the team"
+                : "Create your account"}
           </p>
         </div>
         <form
           action={signupAction}
           className="rounded-[10px] border border-line bg-surface p-6"
         >
+          {invite && <input type="hidden" name="invite" value={invite} />}
           <label
             htmlFor="name"
             className="mb-2 block text-xs font-medium uppercase tracking-wider text-fg-faint"
@@ -85,7 +90,10 @@ export default async function SignupPage({
         </form>
         <p className="mt-4 text-center text-sm text-fg-muted">
           Have an account?{" "}
-          <Link href="/login" className="text-lime hover:underline">
+          <Link
+            href={invite ? `/login?invite=${invite}` : "/login"}
+            className="text-lime hover:underline"
+          >
             Sign in
           </Link>
         </p>

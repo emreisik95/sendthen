@@ -14,7 +14,7 @@ export async function GET(
   const [email] = await db
     .select()
     .from(emails)
-    .where(and(eq(emails.id, id), eq(emails.userId, auth.userId!)));
+    .where(and(eq(emails.id, id), eq(emails.teamId, auth.teamId!)));
   if (!email) return apiError(404, "not_found", "Email not found.");
 
   return NextResponse.json({

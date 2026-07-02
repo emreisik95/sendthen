@@ -7,6 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { db, apiKeys, domains, emails, webhooks, emailEvents } from "@/lib/db";
 import { hashToken, requireApiKey } from "@/lib/api-auth";
 import { registerUser } from "@/lib/auth-user";
+import { createTeam } from "@/lib/team";
 import { newApiKeyId, newApiToken, newDomainId, newEmailId, newWebhookId, newWebhookSecret } from "@/lib/id";
 import { generateDkimKeyPair, dnsRecordsForDomain } from "@/lib/dkim";
 import { verifyDomain } from "@/lib/dns-verify";
@@ -17,13 +18,17 @@ import { eq } from "drizzle-orm";
 
 const TOKEN = newApiToken();
 let userId: string;
+let teamId: string;
 
 beforeAll(async () => {
   const user = await registerUser("test@sendthen.dev", "Test", "password123");
   userId = user.id;
+  const team = await createTeam("test team", userId);
+  teamId = team.id;
   await db.insert(apiKeys).values({
     id: newApiKeyId(),
     userId,
+    teamId,
     name: "test",
     tokenHash: hashToken(TOKEN),
     tokenPrefix: TOKEN.slice(0, 12),
@@ -66,6 +71,7 @@ describe("domains", () => {
     await db.insert(domains).values({
       id,
       userId,
+      teamId,
       name: "mail.test.dev",
       dkimPrivateKey: privateKey,
       dkimPublicKey: publicKey,
@@ -86,6 +92,7 @@ describe("email pipeline (sandbox)", () => {
     await db.insert(emails).values({
       id,
       userId,
+      teamId,
       from: "test <hi@mail.test.dev>",
       to: ["dest@example.com"],
       subject: "Hello",
@@ -148,6 +155,7 @@ describe("webhooks", () => {
     await db.insert(webhooks).values({
       id: newWebhookId(),
       userId,
+      teamId,
       url: `http://127.0.0.1:${port}/hook`,
       secret,
       events: ["email.opened-test" as never, "email.sent"],
@@ -158,6 +166,7 @@ describe("webhooks", () => {
     await db.insert(emails).values({
       id: emailId,
       userId,
+      teamId,
       from: "hi@mail.test.dev",
       to: ["x@example.com"],
       subject: "hook test",

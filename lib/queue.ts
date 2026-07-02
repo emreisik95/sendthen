@@ -26,30 +26,30 @@ async function processOne(email: Email): Promise<void> {
 
   const domainName = fromDomainOf(email);
   const [domain] =
-    domainName && email.userId
+    domainName && email.teamId
       ? await db
           .select()
           .from(domains)
           .where(
             and(
               eq(domains.name, domainName),
-              eq(domains.userId, email.userId),
+              eq(domains.teamId, email.teamId),
             ),
           )
       : [];
 
-  const [settings] = email.userId
+  const [settings] = email.teamId
     ? await db
         .select()
         .from(userSettings)
-        .where(eq(userSettings.userId, email.userId))
+        .where(eq(userSettings.teamId, email.teamId))
     : [];
 
   // drop suppressed recipients (bounces, complaints, manual blocks)
   let outgoing: Email = email;
-  if (email.userId) {
+  if (email.teamId) {
     const all = [...email.to, ...(email.cc ?? []), ...(email.bcc ?? [])];
-    const suppressed = new Set(await suppressedAmong(email.userId, all));
+    const suppressed = new Set(await suppressedAmong(email.teamId, all));
     if (suppressed.size > 0) {
       const keep = (list: string[] | null) =>
         list?.filter((a) => !suppressed.has(a.toLowerCase())) ?? null;

@@ -91,7 +91,8 @@ interface CreateOptions {
  * Caller is responsible for kicking the queue.
  */
 export async function createEmail(
-  userId: string,
+  teamId: string,
+  userId: string | null,
   apiKeyId: string | null,
   data: SendInput,
   opts: CreateOptions = {},
@@ -103,7 +104,7 @@ export async function createEmail(
       .where(
         and(
           eq(emails.idempotencyKey, opts.idempotencyKey),
-          eq(emails.userId, userId),
+          eq(emails.teamId, teamId),
         ),
       );
     if (existing) return { id: existing.id };
@@ -116,12 +117,12 @@ export async function createEmail(
   const [domain] = await db
     .select()
     .from(domains)
-    .where(and(eq(domains.name, domainName), eq(domains.userId, userId)));
+    .where(and(eq(domains.name, domainName), eq(domains.teamId, teamId)));
 
   const [settings] = await db
     .select()
     .from(userSettings)
-    .where(eq(userSettings.userId, userId));
+    .where(eq(userSettings.teamId, teamId));
 
   const userMode =
     settings && settings.mailMode !== "inherit"
@@ -135,7 +136,7 @@ export async function createEmail(
     );
   }
 
-  const suppressed = await suppressedAmong(userId, data.to);
+  const suppressed = await suppressedAmong(teamId, data.to);
   if (suppressed.length === data.to.length) {
     throw new SendError(
       422,
@@ -151,7 +152,7 @@ export async function createEmail(
       .select()
       .from(templates)
       .where(
-        and(eq(templates.id, data.template_id), eq(templates.userId, userId)),
+        and(eq(templates.id, data.template_id), eq(templates.teamId, teamId)),
       );
     if (!tpl) {
       throw new SendError(404, "template_not_found", "Template not found.");
@@ -172,6 +173,7 @@ export async function createEmail(
   const id = newEmailId();
   await db.insert(emails).values({
     id,
+    teamId,
     userId,
     domainId: domain?.id ?? null,
     apiKeyId,

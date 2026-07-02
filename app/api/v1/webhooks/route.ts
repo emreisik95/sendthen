@@ -1,18 +1,9 @@
 import { NextResponse } from "next/server";
 import { desc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { db, webhooks } from "@/lib/db";
+import { db, webhooks, EVENT_TYPES } from "@/lib/db";
 import { apiError, requireApiKey } from "@/lib/api-auth";
 import { newWebhookId, newWebhookSecret } from "@/lib/id";
-
-const EVENT_TYPES = [
-  "email.queued",
-  "email.sent",
-  "email.delivered",
-  "email.bounced",
-  "email.failed",
-  "email.canceled",
-] as const;
 
 const createSchema = z.object({
   url: z.url(),
@@ -39,6 +30,7 @@ export async function POST(req: Request) {
     .values({
       id: newWebhookId(),
       userId: auth.userId,
+      teamId: auth.teamId,
       url: parsed.data.url,
       secret: newWebhookSecret(),
       events: [...parsed.data.events],
@@ -66,7 +58,7 @@ export async function GET(req: Request) {
   const rows = await db
     .select()
     .from(webhooks)
-    .where(eq(webhooks.userId, auth.userId!))
+    .where(eq(webhooks.teamId, auth.teamId!))
     .orderBy(desc(webhooks.createdAt));
   return NextResponse.json({
     data: rows.map((h) => ({

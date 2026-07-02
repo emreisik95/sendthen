@@ -2,6 +2,7 @@ import { describe, expect, it, beforeAll } from "vitest";
 import { eq } from "drizzle-orm";
 import { db, audiences, contacts, users } from "@/lib/db";
 import { registerUser, verifyPassword, hashPassword } from "@/lib/auth-user";
+import { createTeam } from "@/lib/team";
 import { createEmail, renderTemplate, SendError } from "@/lib/send-email";
 import { addSuppression } from "@/lib/suppress";
 import { injectTracking, trackSign, trackVerify } from "@/lib/tracking";
@@ -10,6 +11,7 @@ import { newAudienceId, newBroadcastId, newContactId } from "@/lib/id";
 import { broadcasts, emails } from "@/lib/db";
 
 let userId: string;
+let teamId: string;
 
 beforeAll(async () => {
   const [existing] = await db
@@ -19,6 +21,8 @@ beforeAll(async () => {
   const user =
     existing ?? (await registerUser("saas@sendthen.dev", "Saas", "password123"));
   userId = user.id;
+  const team = await createTeam("saas team", userId);
+  teamId = team.id;
 });
 
 describe("passwords", () => {
@@ -59,9 +63,9 @@ describe("tracking", () => {
 
 describe("suppressions", () => {
   it("blocks a fully-suppressed send", async () => {
-    await addSuppression(userId, "blocked@example.com", "manual");
+    await addSuppression(teamId, userId, "blocked@example.com", "manual");
     await expect(
-      createEmail(userId, null, {
+      createEmail(teamId, userId, null, {
         from: "hi@mail.test.dev",
         to: ["blocked@example.com"],
         subject: "nope",
@@ -77,6 +81,7 @@ describe("broadcasts", () => {
     await db.insert(audiences).values({
       id: audienceId,
       userId,
+      teamId,
       name: "test-aud",
       createdAt: new Date(),
     });
@@ -100,6 +105,7 @@ describe("broadcasts", () => {
     await db.insert(broadcasts).values({
       id: broadcastId,
       userId,
+      teamId,
       audienceId,
       from: "news@mail.test.dev",
       subject: "Hi {{first_name}}",

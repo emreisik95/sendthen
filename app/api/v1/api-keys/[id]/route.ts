@@ -20,7 +20,7 @@ export async function DELETE(
     .where(
       and(
         eq(apiKeys.id, id),
-        eq(apiKeys.userId, auth.userId!),
+        eq(apiKeys.teamId, auth.teamId!),
         isNull(apiKeys.revokedAt),
       ),
     )

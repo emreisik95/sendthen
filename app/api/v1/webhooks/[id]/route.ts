@@ -21,7 +21,7 @@ export async function GET(
   const [hook] = await db
     .select()
     .from(webhooks)
-    .where(and(eq(webhooks.id, id), eq(webhooks.userId, auth.userId!)));
+    .where(and(eq(webhooks.id, id), eq(webhooks.teamId, auth.teamId!)));
   if (!hook) return apiError(404, "not_found", "Webhook not found.");
   return NextResponse.json({
     id: hook.id,
@@ -55,7 +55,7 @@ export async function PATCH(
   const updated = await db
     .update(webhooks)
     .set(parsed.data)
-    .where(and(eq(webhooks.id, id), eq(webhooks.userId, auth.userId!)))
+    .where(and(eq(webhooks.id, id), eq(webhooks.teamId, auth.teamId!)))
     .returning();
   if (updated.length === 0) {
     return apiError(404, "not_found", "Webhook not found.");
@@ -79,7 +79,7 @@ export async function DELETE(
   const { id } = await params;
   const deleted = await db
     .delete(webhooks)
-    .where(and(eq(webhooks.id, id), eq(webhooks.userId, auth.userId!)))
+    .where(and(eq(webhooks.id, id), eq(webhooks.teamId, auth.teamId!)))
     .returning({ id: webhooks.id });
   if (deleted.length === 0) {
     return apiError(404, "not_found", "Webhook not found.");

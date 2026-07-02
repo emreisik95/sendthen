@@ -1,7 +1,9 @@
 import { eq } from "drizzle-orm";
 import { db, userSettings } from "@/lib/db";
 import { requireUser } from "@/lib/auth-user";
+import { getActiveTeam } from "@/lib/team";
 import { mailMode } from "@/lib/mailer";
+import { secretHint } from "@/lib/crypto";
 import { saveSettingsAction } from "@/app/actions";
 import { Card, PageHeader, btnPrimary, inputCls } from "@/components/ui";
 
@@ -13,15 +15,20 @@ export default async function SettingsPage({
   searchParams: Promise<{ saved?: string }>;
 }) {
   const user = await requireUser();
+  const { team } = await getActiveTeam(user);
   const { saved } = await searchParams;
   const [settings] = await db
     .select()
     .from(userSettings)
-    .where(eq(userSettings.userId, user.id));
+    .where(eq(userSettings.teamId, team.id));
 
   return (
     <div className="mx-auto max-w-2xl">
       <PageHeader title="Settings" />
+      <p className="mb-6 text-sm text-fg-muted">
+        Transport and tracking for the{" "}
+        <span className="text-fg">{team.name}</span> team.
+      </p>
       {saved && (
         <Card className="mb-6 border-lime/40 px-4 py-3 text-sm text-lime">
           Settings saved.
@@ -47,14 +54,11 @@ export default async function SettingsPage({
             <option value="ses">Amazon SES</option>
           </select>
 
-          <label className="mb-2 mt-5 block text-xs font-medium uppercase tracking-wider text-fg-faint">
-            SMTP URL
-          </label>
-          <input
+          <SecretField
             name="smtpUrl"
+            label="SMTP URL"
             placeholder="smtp://user:pass@smtp.example.com:587"
-            defaultValue={settings?.smtpUrl ?? ""}
-            className={`${inputCls} font-mono`}
+            stored={settings?.smtpUrl}
           />
 
           <div className="mt-5 grid gap-4 sm:grid-cols-3">
@@ -80,15 +84,17 @@ export default async function SettingsPage({
               />
             </div>
           </div>
-          <label className="mb-2 mt-4 block text-xs font-medium uppercase tracking-wider text-fg-faint">
-            SES secret access key
-          </label>
-          <input
+
+          <SecretField
             name="sesSecretAccessKey"
-            type="password"
-            defaultValue={settings?.sesSecretAccessKey ?? ""}
-            className={`${inputCls} font-mono`}
+            label="SES secret access key"
+            placeholder=""
+            stored={settings?.sesSecretAccessKey}
           />
+          <p className="mt-3 text-xs text-fg-faint">
+            Secrets are write-only: they&apos;re stored encrypted and never
+            shown again. Leave a field empty to keep the current value.
+          </p>
         </Card>
 
         <Card className="p-6">
@@ -122,6 +128,44 @@ export default async function SettingsPage({
           Save settings
         </button>
       </form>
+    </div>
+  );
+}
+
+function SecretField({
+  name,
+  label,
+  placeholder,
+  stored,
+}: {
+  name: string;
+  label: string;
+  placeholder: string;
+  stored: string | null | undefined;
+}) {
+  return (
+    <div className="mt-5">
+      <div className="mb-2 flex items-center justify-between">
+        <label className="block text-xs font-medium uppercase tracking-wider text-fg-faint">
+          {label}
+        </label>
+        {stored && (
+          <span className="flex items-center gap-2 font-mono text-xs text-fg-faint">
+            <span className="text-lime">set</span> {secretHint(stored)}
+            <label className="flex cursor-pointer items-center gap-1 text-danger">
+              <input type="checkbox" name={`${name}Clear`} className="accent-[#FF4D4D]" />
+              clear
+            </label>
+          </span>
+        )}
+      </div>
+      <input
+        name={name}
+        type="password"
+        autoComplete="off"
+        placeholder={stored ? "•••••••• (unchanged)" : placeholder}
+        className={`${inputCls} font-mono`}
+      />
     </div>
   );
 }

@@ -17,6 +17,10 @@ export const newEventId = () => `evt_${nano(24)}`;
 export const newDeliveryId = () => `whd_${nano(24)}`;
 
 export const newUserId = () => `usr_${nano(20)}`;
+export const newTeamId = () => `team_${nano(20)}`;
+export const newMemberId = () => `mem_${nano(20)}`;
+export const newInviteId = () => `inv_${nano(20)}`;
+export const newInviteToken = () => nano(40);
 export const newSettingsId = () => `set_${nano(20)}`;
 export const newSuppressionId = () => `sup_${nano(20)}`;
 export const newTemplateId = () => `tpl_${nano(20)}`;

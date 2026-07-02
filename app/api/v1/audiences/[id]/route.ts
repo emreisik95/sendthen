@@ -14,7 +14,7 @@ export async function GET(
   const [audience] = await db
     .select()
     .from(audiences)
-    .where(and(eq(audiences.id, id), eq(audiences.userId, auth.userId!)));
+    .where(and(eq(audiences.id, id), eq(audiences.teamId, auth.teamId!)));
   if (!audience) return apiError(404, "not_found", "Audience not found.");
   return NextResponse.json({
     id: audience.id,
@@ -33,7 +33,7 @@ export async function DELETE(
   const { id } = await params;
   const deleted = await db
     .delete(audiences)
-    .where(and(eq(audiences.id, id), eq(audiences.userId, auth.userId!)))
+    .where(and(eq(audiences.id, id), eq(audiences.teamId, auth.teamId!)))
     .returning({ id: audiences.id });
   if (deleted.length === 0) {
     return apiError(404, "not_found", "Audience not found.");

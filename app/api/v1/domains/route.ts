@@ -46,6 +46,7 @@ export async function POST(req: Request) {
     .values({
       id: newDomainId(),
       userId: auth.userId,
+      teamId: auth.teamId,
       name: parsed.data.name,
       dkimPrivateKey: privateKey,
       dkimPublicKey: publicKey,
@@ -63,7 +64,7 @@ export async function GET(req: Request) {
   const rows = await db
     .select()
     .from(domains)
-    .where(eq(domains.userId, auth.userId!))
+    .where(eq(domains.teamId, auth.teamId!))
     .orderBy(desc(domains.createdAt));
   return NextResponse.json({ data: rows.map(domainResponse) });
 }

@@ -1,6 +1,7 @@
 import { desc, eq } from "drizzle-orm";
 import { db, webhookDeliveries, webhooks } from "@/lib/db";
 import { requireUser } from "@/lib/auth-user";
+import { getActiveTeam } from "@/lib/team";
 import {
   createWebhookAction,
   deleteWebhookAction,
@@ -21,21 +22,15 @@ import { CopyButton } from "@/components/copy-button";
 
 export const dynamic = "force-dynamic";
 
-const EVENT_TYPES = [
-  "email.queued",
-  "email.sent",
-  "email.delivered",
-  "email.bounced",
-  "email.failed",
-  "email.canceled",
-];
+import { EVENT_TYPES } from "@/lib/db";
 
 export default async function WebhooksPage() {
   const user = await requireUser();
+  const { team } = await getActiveTeam(user);
   const rows = await db
     .select()
     .from(webhooks)
-    .where(eq(webhooks.userId, user.id))
+    .where(eq(webhooks.teamId, team.id))
     .orderBy(desc(webhooks.createdAt));
 
   const deliveries = await db
@@ -45,7 +40,7 @@ export default async function WebhooksPage() {
     })
     .from(webhookDeliveries)
     .innerJoin(webhooks, eq(webhookDeliveries.webhookId, webhooks.id))
-    .where(eq(webhooks.userId, user.id))
+    .where(eq(webhooks.teamId, team.id))
     .orderBy(desc(webhookDeliveries.createdAt))
     .limit(20);
 

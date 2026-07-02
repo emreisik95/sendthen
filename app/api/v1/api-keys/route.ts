@@ -34,6 +34,7 @@ export async function POST(req: Request) {
     .values({
       id: newApiKeyId(),
       userId: auth.userId,
+      teamId: auth.teamId,
       name: parsed.data.name,
       tokenHash: hashToken(token),
       tokenPrefix: token.slice(0, 12),
@@ -53,7 +54,7 @@ export async function GET(req: Request) {
   const rows = await db
     .select()
     .from(apiKeys)
-    .where(and(isNull(apiKeys.revokedAt), eq(apiKeys.userId, auth.userId!)))
+    .where(and(isNull(apiKeys.revokedAt), eq(apiKeys.teamId, auth.teamId!)))
     .orderBy(desc(apiKeys.createdAt));
 
   return NextResponse.json({

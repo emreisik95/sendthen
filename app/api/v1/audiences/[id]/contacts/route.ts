@@ -12,11 +12,11 @@ const createSchema = z.object({
   unsubscribed: z.boolean().optional(),
 });
 
-async function ownedAudience(audienceId: string, userId: string) {
+async function ownedAudience(audienceId: string, teamId: string) {
   const [audience] = await db
     .select()
     .from(audiences)
-    .where(and(eq(audiences.id, audienceId), eq(audiences.userId, userId)));
+    .where(and(eq(audiences.id, audienceId), eq(audiences.teamId, teamId)));
   return audience;
 }
 
@@ -28,7 +28,7 @@ export async function POST(
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
-  if (!(await ownedAudience(id, auth.userId!))) {
+  if (!(await ownedAudience(id, auth.teamId!))) {
     return apiError(404, "not_found", "Audience not found.");
   }
 
@@ -70,7 +70,7 @@ export async function GET(
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
-  if (!(await ownedAudience(id, auth.userId!))) {
+  if (!(await ownedAudience(id, auth.teamId!))) {
     return apiError(404, "not_found", "Audience not found.");
   }
 

@@ -16,7 +16,7 @@ export async function POST(
   const [domain] = await db
     .select()
     .from(domains)
-    .where(and(eq(domains.id, id), eq(domains.userId, auth.userId!)));
+    .where(and(eq(domains.id, id), eq(domains.teamId, auth.teamId!)));
   if (!domain) return apiError(404, "not_found", "Domain not found.");
 
   await verifyDomain(domain);

@@ -3,7 +3,7 @@ import { db, suppressions, type Suppression } from "./db";
 import { newSuppressionId } from "./id";
 
 export async function suppressedAmong(
-  userId: string,
+  teamId: string,
   addresses: string[],
 ): Promise<string[]> {
   if (addresses.length === 0) return [];
@@ -12,12 +12,13 @@ export async function suppressedAmong(
     .select({ email: suppressions.email })
     .from(suppressions)
     .where(
-      and(eq(suppressions.userId, userId), inArray(suppressions.email, lower)),
+      and(eq(suppressions.teamId, teamId), inArray(suppressions.email, lower)),
     );
   return rows.map((r) => r.email);
 }
 
 export async function addSuppression(
+  teamId: string,
   userId: string,
   email: string,
   reason: Suppression["reason"],
@@ -26,6 +27,7 @@ export async function addSuppression(
     .insert(suppressions)
     .values({
       id: newSuppressionId(),
+      teamId,
       userId,
       email: email.toLowerCase(),
       reason,

@@ -1,18 +1,34 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth-user";
-import { logoutAction } from "@/app/actions";
+import { getActiveTeam, membershipsOf } from "@/lib/team";
+import { logoutAction, switchTeamAction } from "@/app/actions";
+import {
+  IconBan,
+  IconBroadcast,
+  IconChart,
+  IconChevronUpDown,
+  IconGlobe,
+  IconKey,
+  IconMail,
+  IconSettings,
+  IconTeam,
+  IconTemplate,
+  IconUsers,
+  IconWebhook,
+} from "@/components/nav-icons";
 
 const NAV = [
-  { href: "/overview", label: "Overview" },
-  { href: "/emails", label: "Emails" },
-  { href: "/broadcasts", label: "Broadcasts" },
-  { href: "/audiences", label: "Audiences" },
-  { href: "/templates", label: "Templates" },
-  { href: "/domains", label: "Domains" },
-  { href: "/api-keys", label: "API Keys" },
-  { href: "/webhooks", label: "Webhooks" },
-  { href: "/suppressions", label: "Suppressions" },
-  { href: "/settings", label: "Settings" },
+  { href: "/overview", label: "Overview", icon: IconChart },
+  { href: "/emails", label: "Emails", icon: IconMail },
+  { href: "/broadcasts", label: "Broadcasts", icon: IconBroadcast },
+  { href: "/audiences", label: "Audiences", icon: IconUsers },
+  { href: "/templates", label: "Templates", icon: IconTemplate },
+  { href: "/domains", label: "Domains", icon: IconGlobe },
+  { href: "/api-keys", label: "API Keys", icon: IconKey },
+  { href: "/webhooks", label: "Webhooks", icon: IconWebhook },
+  { href: "/suppressions", label: "Suppressions", icon: IconBan },
+  { href: "/team", label: "Team", icon: IconTeam },
+  { href: "/settings", label: "Settings", icon: IconSettings },
 ];
 
 export default async function DashLayout({
@@ -21,31 +37,77 @@ export default async function DashLayout({
   children: React.ReactNode;
 }) {
   const user = await requireUser();
+  const { team } = await getActiveTeam(user);
+  const memberships = await membershipsOf(user.id);
 
   return (
     <div className="flex min-h-screen">
-      <aside className="flex w-56 shrink-0 flex-col border-r border-line bg-surface">
-        <div className="px-5 py-5">
-          <Link href="/emails" className="font-mono text-lg font-medium">
-            send<span className="text-lime">then</span>
-          </Link>
+      <aside className="flex w-60 shrink-0 flex-col border-r border-line bg-surface">
+        {/* workspace switcher */}
+        <div className="p-3">
+          <details className="group relative">
+            <summary className="flex cursor-pointer list-none items-center gap-2.5 rounded-lg border border-line bg-surface-2 px-3 py-2 transition-colors hover:bg-surface-3 [&::-webkit-details-marker]:hidden">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-lime font-mono text-xs font-semibold text-on-lime">
+                {team.name.slice(0, 1).toUpperCase()}
+              </span>
+              <span className="min-w-0 flex-1 truncate text-sm font-medium">
+                {team.name}
+              </span>
+              <IconChevronUpDown className="shrink-0 text-fg-faint" />
+            </summary>
+            <div className="absolute left-0 right-0 top-full z-20 mt-1 overflow-hidden rounded-lg border border-line bg-surface-3 py-1 shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
+              {memberships.map(({ team: t }) => (
+                <form key={t.id} action={switchTeamAction}>
+                  <input type="hidden" name="teamId" value={t.id} />
+                  <button
+                    type="submit"
+                    className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-surface-2 ${
+                      t.id === team.id ? "text-lime" : "text-fg-muted"
+                    }`}
+                  >
+                    <span className="flex h-5 w-5 items-center justify-center rounded bg-surface font-mono text-[10px]">
+                      {t.name.slice(0, 1).toUpperCase()}
+                    </span>
+                    <span className="truncate">{t.name}</span>
+                    {t.id === team.id && <span className="ml-auto">✓</span>}
+                  </button>
+                </form>
+              ))}
+              <Link
+                href="/team"
+                className="mt-1 block border-t border-hairline px-3 py-2 text-sm text-fg-faint transition-colors hover:bg-surface-2 hover:text-fg"
+              >
+                Manage team →
+              </Link>
+            </div>
+          </details>
         </div>
-        <nav className="flex-1 space-y-0.5 px-3">
-          {NAV.map((item) => (
+
+        {/* nav */}
+        <nav className="flex-1 space-y-0.5 px-3 pt-1">
+          {NAV.map(({ href, label, icon: Icon }) => (
             <Link
-              key={item.href}
-              href={item.href}
-              className="block rounded-md px-3 py-2 text-sm text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg"
+              key={href}
+              href={href}
+              className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg"
             >
-              {item.label}
+              <Icon className="shrink-0 text-fg-faint" />
+              {label}
             </Link>
           ))}
         </nav>
+
+        {/* profile footer */}
         <div className="border-t border-line p-3">
-          <div className="truncate px-3 pb-1 text-xs text-fg-faint">
-            {user.email}
+          <div className="flex items-center gap-2.5 px-2 pb-2">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface-3 font-mono text-xs text-fg-muted">
+              {user.email.slice(0, 1).toUpperCase()}
+            </span>
+            <span className="min-w-0 flex-1 truncate text-xs text-fg-muted">
+              {user.email}
+            </span>
             {user.role === "admin" && (
-              <span className="ml-1.5 rounded bg-lime/14 px-1.5 py-0.5 font-mono text-[10px] text-lime">
+              <span className="rounded bg-lime/14 px-1.5 py-0.5 font-mono text-[10px] text-lime">
                 admin
               </span>
             )}
@@ -53,7 +115,7 @@ export default async function DashLayout({
           <form action={logoutAction}>
             <button
               type="submit"
-              className="w-full rounded-md px-3 py-2 text-left text-sm text-fg-faint transition-colors hover:bg-surface-2 hover:text-fg"
+              className="w-full rounded-md px-2 py-1.5 text-left text-xs text-fg-faint transition-colors hover:bg-surface-2 hover:text-fg"
             >
               Sign out
             </button>

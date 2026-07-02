@@ -65,9 +65,9 @@ export async function POST(req: Request) {
       bounce_type: msg.bounce?.bounceType,
     });
     // only hard bounces go on the suppression list
-    if (email.userId && msg.bounce?.bounceType === "Permanent") {
+    if (email.teamId && email.userId && msg.bounce?.bounceType === "Permanent") {
       for (const rcpt of recipients) {
-        await addSuppression(email.userId, rcpt, "bounce");
+        await addSuppression(email.teamId, email.userId, rcpt, "bounce");
       }
     }
   } else if (msg.notificationType === "Complaint") {
@@ -76,9 +76,9 @@ export async function POST(req: Request) {
         ?.map((r) => r.emailAddress)
         .filter((a): a is string => !!a) ?? [];
     await recordEvent(email.id, "email.complained", { recipients });
-    if (email.userId) {
+    if (email.teamId && email.userId) {
       for (const rcpt of recipients) {
-        await addSuppression(email.userId, rcpt, "complaint");
+        await addSuppression(email.teamId, email.userId, rcpt, "complaint");
       }
     }
   }

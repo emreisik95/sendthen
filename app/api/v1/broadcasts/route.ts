@@ -38,7 +38,7 @@ export async function POST(req: Request) {
     .where(
       and(
         eq(audiences.id, parsed.data.audience_id),
-        eq(audiences.userId, auth.userId!),
+        eq(audiences.teamId, auth.teamId!),
       ),
     );
   if (!audience) return apiError(404, "not_found", "Audience not found.");
@@ -48,6 +48,7 @@ export async function POST(req: Request) {
     .values({
       id: newBroadcastId(),
       userId: auth.userId!,
+      teamId: auth.teamId,
       audienceId: audience.id,
       from: parsed.data.from,
       subject: parsed.data.subject,
@@ -66,7 +67,7 @@ export async function GET(req: Request) {
   const rows = await db
     .select()
     .from(broadcasts)
-    .where(eq(broadcasts.userId, auth.userId!))
+    .where(eq(broadcasts.teamId, auth.teamId!))
     .orderBy(desc(broadcasts.createdAt));
   return NextResponse.json({
     data: rows.map((b) => ({

@@ -7,11 +7,11 @@ import { btnPrimary, inputCls } from "@/components/ui";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; invite?: string }>;
 }) {
-  if (await getSessionUser()) redirect("/emails");
+  const { error, invite } = await searchParams;
+  if (await getSessionUser()) redirect(invite ? `/invite/${invite}` : "/emails");
   if ((await userCount()) === 0) redirect("/signup");
-  const { error } = await searchParams;
 
   return (
     <main className="flex min-h-screen items-center justify-center px-4">
@@ -26,6 +26,7 @@ export default async function LoginPage({
           action={loginAction}
           className="rounded-[10px] border border-line bg-surface p-6"
         >
+          {invite && <input type="hidden" name="invite" value={invite} />}
           <label
             htmlFor="email"
             className="mb-2 block text-xs font-medium uppercase tracking-wider text-fg-faint"
@@ -70,10 +71,13 @@ export default async function LoginPage({
             Sign in
           </button>
         </form>
-        {!signupDisabled() && (
+        {(!signupDisabled() || invite) && (
           <p className="mt-4 text-center text-sm text-fg-muted">
             No account?{" "}
-            <Link href="/signup" className="text-lime hover:underline">
+            <Link
+              href={invite ? `/signup?invite=${invite}` : "/signup"}
+              className="text-lime hover:underline"
+            >
               Sign up
             </Link>
           </p>

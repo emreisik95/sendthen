@@ -21,7 +21,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { id } = await createEmail(auth.userId!, auth.id, parsed.data, {
+    const { id } = await createEmail(auth.teamId!, auth.userId, auth.id, parsed.data, {
       idempotencyKey: req.headers.get("idempotency-key"),
     });
     kickQueue();
@@ -44,7 +44,7 @@ export async function GET(req: Request) {
   const rows = await db
     .select()
     .from(emails)
-    .where(eq(emails.userId, auth.userId!))
+    .where(eq(emails.teamId, auth.teamId!))
     .orderBy(desc(emails.createdAt))
     .limit(limit);
 

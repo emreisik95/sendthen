@@ -15,6 +15,13 @@
       "when": 1782974563359,
       "tag": "0001_adorable_bug",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1782976445435,
+      "tag": "0002_brainy_manta",
+      "breakpoints": true
     }
   ]
 }
