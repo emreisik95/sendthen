@@ -13,6 +13,7 @@ import {
   fmtDate,
   inputCls,
 } from "@/components/ui";
+import { LiveVerify } from "@/components/domains/live-verify";
 
 export const dynamic = "force-dynamic";
 
@@ -58,6 +59,9 @@ export default async function DomainsPage() {
                 <span className="font-mono text-xs tabular-nums text-fg-faint">
                   {fmtDate(d.createdAt)}
                 </span>
+                {d.status === "pending" && (
+                  <LiveVerify domainId={d.id} compact />
+                )}
                 <StatusPill status={d.status} />
               </span>
             </Link>

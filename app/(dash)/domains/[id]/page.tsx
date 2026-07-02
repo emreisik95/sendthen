@@ -16,6 +16,7 @@ import {
   fmtDate,
 } from "@/components/ui";
 import { CopyButton } from "@/components/copy-button";
+import { LiveVerify } from "@/components/domains/live-verify";
 
 export const dynamic = "force-dynamic";
 
@@ -55,12 +56,18 @@ export default async function DomainDetailPage({
         <StatusPill status={domain.status} />
       </PageHeader>
 
-      <p className="mb-6 text-sm text-fg-muted">
+      <p className="mb-2 text-sm text-fg-muted">
         Publish these DNS records, then hit verify. Last check:{" "}
         <span className="font-mono text-xs tabular-nums">
           {fmtDate(domain.lastCheckedAt)}
         </span>
       </p>
+
+      {domain.status === "pending" && (
+        <div className="mb-6">
+          <LiveVerify domainId={domain.id} />
+        </div>
+      )}
 
       <div className="mb-6 space-y-4">
         {records.map((r) => {
