@@ -1,0 +1,47 @@
+{
+  "name": "sendthen",
+  "version": "0.1.0",
+  "description": "SDK + CLI for sendthen — open-source, self-hosted email platform",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/emreisik95/sendthen",
+    "directory": "sdk"
+  },
+  "homepage": "https://sendthen.net",
+  "keywords": [
+    "email",
+    "resend",
+    "smtp",
+    "ses",
+    "self-hosted",
+    "transactional"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "sendthen": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.0.0"
+  }
+}

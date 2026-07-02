@@ -451,13 +451,15 @@ function verify(req: Request, rawBody: string, secret: string) {
         {/* ---------------------------------------------------------- */}
         <Section id="sdk" title="SDK reference">
           <P>
-            The TypeScript SDK lives in <Mono>sdk/index.ts</Mono> — zero
-            dependencies, works in Node 18+, Bun, Deno, and edge runtimes
-            (anything with <Mono>fetch</Mono>).
+            The TypeScript SDK ships as the <Mono>sendthen</Mono> npm package
+            (<Mono>npm install sendthen</Mono>) — zero dependencies, works in
+            Node 18+, Bun, Deno, and edge runtimes (anything with{" "}
+            <Mono>fetch</Mono>). The package also includes a CLI:{" "}
+            <Mono>npx sendthen login</Mono>.
           </P>
 
           <H3>Constructor</H3>
-          <Code>{`import { SendThen } from "./sdk";
+          <Code>{`import { SendThen } from "sendthen";
 
 const st = new SendThen("st_xxxxxxxx", {
   baseUrl: "https://send.yourdomain.com", // default: SENDTHEN_BASE_URL env or http://localhost:3000

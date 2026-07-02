@@ -112,14 +112,20 @@ POST/GET /api/v1/broadcasts        draft · POST /:id/send fans out
 
 Webhook events: `email.queued|sent|delivered|bounced|complained|failed|canceled|opened|clicked`, HMAC-signed with svix-compatible headers. The **full API reference ships at `/docs` on every instance** — [see the demo's](https://sendthen.net/docs).
 
-A zero-dependency TypeScript SDK lives in [`sdk/`](./sdk) (Node 18+, Bun, Deno, edge — anything with `fetch`):
+A zero-dependency TypeScript SDK + CLI ships as the [`sendthen`](https://www.npmjs.com/package/sendthen) npm package (Node 18+, Bun, Deno, edge — anything with `fetch`; source in [`sdk/`](./sdk)):
+
+```bash
+npm install sendthen
+```
 
 ```ts
-import { SendThen } from "./sdk";
+import { SendThen } from "sendthen";
 
 const st = new SendThen("st_...", { baseUrl: "https://send.example.com" });
 const { id } = await st.emails.send({ from, to, subject, html });
 ```
+
+The package also includes a CLI: `npx sendthen login`, then `npx sendthen send …` and `npx sendthen trace <id>`.
 
 ## Architecture
 

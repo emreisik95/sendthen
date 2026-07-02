@@ -406,7 +406,7 @@ function SendStep({
     "subject": "Hello from sendthen",
     "html": "<strong>It just sends.</strong>"
   }'`;
-  const sdk = `import { SendThen } from "./sdk";
+  const sdk = `import { SendThen } from "sendthen";
 
 const st = new SendThen("${key}");
 

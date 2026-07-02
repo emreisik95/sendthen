@@ -31,6 +31,21 @@ await st.emails.send({
     "html": "<strong>It just sends.</strong>"
   }'`,
   },
+  {
+    label: "CLI",
+    file: "terminal",
+    code: `$ npx sendthen login
+$ sendthen send --from "you <hello@yourdomain.com>" \\
+    --to user@example.com \\
+    --subject "Welcome aboard" \\
+    --html "<strong>It just sends.</strong>"
+✓ queued em_4kq0w2xr — sendthen trace em_4kq0w2xr
+
+$ sendthen trace em_4kq0w2xr --watch
+09:31:04.012  queued     accepted via POST /api/v1/emails
+09:31:04.214  sent       250 2.0.0 OK
+09:31:04.220  delivered  recipient inbox confirmed`,
+  },
 ];
 
 export function CodeTabs() {
