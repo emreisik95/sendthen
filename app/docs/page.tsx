@@ -386,6 +386,70 @@ DELETE /api/v1/api-keys/:id  revoke`}</Code>
           <Code>{`curl -X POST https://send.yourdomain.com/api/inbound/raw \\
   -H "Authorization: Bearer <ingest key>" \\
   --data-binary @message.eml`}</Code>
+
+          <H3>Receiving when inbound port 25 is blocked</H3>
+          <P>
+            Most cloud hosts (Hetzner, AWS, GCP, …) drop inbound connections on
+            port 25, so pointing MX straight at the instance often can&apos;t
+            work — the SMTP handshake never reaches the server. Route mail
+            through <b>Cloudflare Email Routing</b> instead: Cloudflare accepts
+            the SMTP on its own infrastructure and an Email Worker forwards the
+            raw message to the HTTP ingest above. No open port on your server.
+          </P>
+          <Table
+            head={["Step", "Action"]}
+            rows={[
+              [
+                "1",
+                "Enable Email Routing on the Cloudflare zone (adds route*.mx.cloudflare.net MX).",
+              ],
+              [
+                "2",
+                "Settings → Subdomains → add your sending subdomain (e.g. email). Delete any conflicting non-Cloudflare MX for it first, or the add is rejected.",
+              ],
+              [
+                "3",
+                "Deploy the Email Worker below and bind INGEST_KEY = the instance ingest key as a Worker secret.",
+              ],
+              [
+                "4",
+                "Routing rules → catch-all (or a specific address) → Send to a Worker → this worker.",
+              ],
+            ]}
+          />
+          <Code>{`export default {
+  async email(message, env) {
+    const raw = await new Response(message.raw).arrayBuffer();
+    const url =
+      "https://send.yourdomain.com/api/inbound/raw?to=" +
+      encodeURIComponent(message.to);
+    await fetch(url, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer " + env.INGEST_KEY,
+        "content-type": "message/rfc822",
+      },
+      body: raw,
+    });
+  },
+};`}</Code>
+          <P>
+            The recipient domain must match a domain registered in sendthen so
+            the message is stored against the right team. Only the MX changes —
+            outbound sending (DKIM / <Mono>stmail._domainkey</Mono>) is
+            unaffected, and DMARC still passes via DKIM alignment.
+          </P>
+
+          <H3>Verifying receiving</H3>
+          <P>
+            A domain&apos;s detail page has a <b>Verify receiving</b> check — it
+            resolves the domain&apos;s MX and confirms it points at this
+            instance, for the built-in SMTP route — and a <b>Test receiving</b>{" "}
+            panel that surfaces the most recent inbound message for the domain.
+            With the SES or Cloudflare relay routes the MX points at the
+            provider, so confirm delivery via Test receiving or{" "}
+            <b>Emails → Receiving</b> rather than the MX check.
+          </P>
         </Section>
 
         {/* ---------------------------------------------------------- */}
