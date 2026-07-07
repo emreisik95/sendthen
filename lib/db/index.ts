@@ -50,7 +50,14 @@ function createDb() {
   sqlite.pragma("foreign_keys = ON");
   sqlite.pragma("busy_timeout = 5000");
   const db = drizzle(sqlite, { schema });
-  migrateLocked(db);
+  // During `next build` (page-data collection) Next spawns several workers
+  // that each import this module and open the same SQLite file at once.
+  // Running migrations then races on the DB and can throw SQLITE_BUSY, failing
+  // the build. Migrations aren't needed to *build* — only to *serve* — so skip
+  // them in the build phase; they still run at server start / first request.
+  if (process.env.NEXT_PHASE !== "phase-production-build") {
+    migrateLocked(db);
+  }
   return db;
 }
 
