@@ -1,8 +1,8 @@
 name: Deploy to CapRover
 
-# Auto-deploy the app on every push to main. Uses a CapRover *app token*
-# (stable, per-app) rather than a CLI login (which expires), so this keeps
-# working unattended.
+# Auto-deploy the app on every push to main. Uses an app-scoped CapRover
+# deploy token (stable, per-app) rather than a CLI login (which expires), so
+# this keeps working unattended.
 on:
   push:
     branches: [main]
@@ -13,9 +13,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      # captain-definition + Dockerfile live at the repo root; CapRover builds
+      # the image server-side from this tarball.
+      - name: Pack source
+        run: tar -cf ./deploy.tar --exclude=./.git --exclude=./deploy.tar .
+
       - name: Deploy to CapRover
-        uses: caprover/deploy-from-github@v1.1.2
-        with:
-          server: "${{ secrets.CAPROVER_SERVER }}"
-          app: "${{ secrets.CAPROVER_APP }}"
-          token: "${{ secrets.CAPROVER_APP_TOKEN }}"
+        run: >
+          npx --yes caprover@2 deploy
+          --tarFile ./deploy.tar
+          --caproverUrl "${{ secrets.CAPROVER_SERVER }}"
+          --appToken "${{ secrets.CAPROVER_APP_TOKEN }}"
+          --appName "${{ secrets.CAPROVER_APP }}"
