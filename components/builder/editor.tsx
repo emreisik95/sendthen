@@ -48,6 +48,15 @@ export interface EditorProps {
     design: TemplateDesign;
   };
   presets: EditorPreset[];
+  /** Options for the "Send test" dialog: from-address + default recipient. */
+  sendConfig: {
+    /** Verified sending domains the user can send from. */
+    domains: { id: string; name: string }[];
+    /** Signed-in user's address — the default test recipient. */
+    userEmail: string;
+    /** Default sender display name (team name — beats "sendthen test"). */
+    defaultFromName: string;
+  };
 }
 
 type Device = "desktop" | "mobile";
@@ -57,9 +66,49 @@ type Patch<T extends Block> = (partial: Partial<Omit<T, "id" | "type">>) => void
 
 type TestSendState =
   | { kind: "idle" }
+  | { kind: "form" }
   | { kind: "sending" }
   | { kind: "ok" }
   | { kind: "error"; message: string };
+
+/** Editable fields in the "Send test" dialog. */
+interface TestForm {
+  fromName: string;
+  fromLocal: string;
+  domainId: string;
+  to: string;
+  vars: Record<string, string>;
+}
+
+/** Default sample values for known variables shown in the test dialog. */
+const VAR_SAMPLES: Record<string, string> = {
+  name: "Alex",
+  code: "123456",
+  title: "A test from the builder",
+};
+
+const VAR_RE = /\{\{\s*([\w.]+)\s*\}\}/g;
+
+/**
+ * Collect every {{variable}} referenced by the subject or any block's string
+ * fields, in first-seen order. `unsubscribe_url` is excluded — the test send
+ * fills it with a preview link automatically, so there's nothing to ask for.
+ */
+function collectVars(subject: string, design: TemplateDesign): string[] {
+  const seen: string[] = [];
+  const add = (name: string) => {
+    if (name !== "unsubscribe_url" && !seen.includes(name)) seen.push(name);
+  };
+  const scan = (s: unknown) => {
+    if (typeof s !== "string") return;
+    for (const m of s.matchAll(VAR_RE)) add(m[1]);
+  };
+  scan(subject);
+  for (const block of design.blocks) {
+    for (const val of Object.values(block)) scan(val);
+  }
+  return seen;
+}
 
 /**
  * One shared drag state for both palette→canvas inserts ("new") and
@@ -1162,7 +1211,186 @@ function DropIndicator() {
 /* Main editor                                                         */
 /* ------------------------------------------------------------------ */
 
-export function Editor({ initial, presets }: EditorProps) {
+/* ------------------------------------------------------------------ */
+/* Send-test dialog                                                     */
+/* ------------------------------------------------------------------ */
+
+function TestSendDialog({
+  form,
+  setForm,
+  domains,
+  onCancel,
+  onSend,
+}: {
+  form: TestForm;
+  setForm: React.Dispatch<React.SetStateAction<TestForm>>;
+  domains: { id: string; name: string }[];
+  onCancel: () => void;
+  onSend: () => void;
+}) {
+  const hasDomains = domains.length > 0;
+  const varNames = Object.keys(form.vars);
+  const toValid = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.to.trim());
+  const canSend = toValid && (!hasDomains || form.domainId !== "");
+  const fromPreview = hasDomains
+    ? `${form.fromName || "sendthen"} <${form.fromLocal || "hello"}@${
+        domains.find((d) => d.id === form.domainId)?.name ?? domains[0].name
+      }>`
+    : `${form.fromName || "sendthen"} <test@sandbox.local>`;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Send a test email"
+      onKeyDown={(e) => {
+        if (e.key === "Escape") onCancel();
+      }}
+      onClick={onCancel}
+    >
+      <div
+        className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-xl border border-line bg-surface p-5 shadow-[0_24px_70px_rgba(0,0,0,0.6)]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 className="text-sm font-semibold text-fg">Send a test email</h2>
+        <p className="mt-1 text-xs text-fg-faint">
+          Sending from a verified domain keeps the test out of spam.
+        </p>
+
+        <div className="mt-4 space-y-4">
+          {/* --- From --- */}
+          <Field label="From name">
+            <input
+              type="text"
+              className={inputCls}
+              value={form.fromName}
+              placeholder="Acme"
+              onChange={(e) => setForm((f) => ({ ...f, fromName: e.target.value }))}
+            />
+          </Field>
+
+          <Field label="From address">
+            {hasDomains ? (
+              <div className="flex items-stretch gap-1.5">
+                <input
+                  type="text"
+                  aria-label="From address local part"
+                  className={`${inputCls} min-w-0 flex-1`}
+                  value={form.fromLocal}
+                  placeholder="hello"
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, fromLocal: e.target.value }))
+                  }
+                />
+                <span className="flex shrink-0 items-center text-sm text-fg-muted">
+                  @
+                </span>
+                <select
+                  aria-label="Sending domain"
+                  className={`${inputCls} min-w-0 flex-1`}
+                  value={form.domainId}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, domainId: e.target.value }))
+                  }
+                >
+                  {domains.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <p className="rounded-md border border-warn/40 bg-warn/10 px-3 py-2 text-xs text-warn">
+                No verified domains yet — this test goes out from a sandbox
+                address and may land in spam. Verify a domain to send for real.
+              </p>
+            )}
+          </Field>
+
+          {/* --- To --- */}
+          <Field label="Send to">
+            <input
+              type="email"
+              className={inputCls}
+              value={form.to}
+              placeholder="you@example.com"
+              onChange={(e) => setForm((f) => ({ ...f, to: e.target.value }))}
+            />
+            {form.to.trim() !== "" && !toValid ? (
+              <span className="mt-1 block text-[11px] text-danger">
+                Enter a valid email address.
+              </span>
+            ) : null}
+          </Field>
+
+          {/* --- Variables --- */}
+          {varNames.length > 0 ? (
+            <div>
+              <span className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-fg-faint">
+                Variables
+              </span>
+              <p className="mb-2 text-xs text-fg-faint">
+                These fill the {"{{placeholders}}"} in your subject and content
+                for this test.
+              </p>
+              <div className="space-y-2">
+                {varNames.map((name) => (
+                  <label key={name} className="flex items-center gap-2">
+                    <span className="w-32 shrink-0 truncate font-mono text-[11px] text-fg-muted">
+                      {`{{${name}}}`}
+                    </span>
+                    <input
+                      type="text"
+                      className={`${inputCls} min-w-0 flex-1`}
+                      value={form.vars[name]}
+                      placeholder={VAR_SAMPLES[name] ?? ""}
+                      onChange={(e) =>
+                        setForm((f) => ({
+                          ...f,
+                          vars: { ...f.vars, [name]: e.target.value },
+                        }))
+                      }
+                    />
+                  </label>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <p className="text-xs text-fg-faint">
+              This template has no variables to fill in.
+            </p>
+          )}
+
+          <p className="truncate rounded-md bg-surface-2 px-3 py-2 font-mono text-[11px] text-fg-muted">
+            {fromPreview}
+          </p>
+        </div>
+
+        <div className="mt-5 flex justify-end gap-2">
+          <button
+            type="button"
+            className={`${btnSecondary} px-4 py-1.5 text-xs`}
+            onClick={onCancel}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            className={`${btnPrimary} px-4 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-50`}
+            disabled={!canSend}
+            onClick={onSend}
+          >
+            Send test
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function Editor({ initial, presets, sendConfig }: EditorProps) {
   const [name, setName] = useState(initial?.name ?? "Untitled template");
   const [subject, setSubject] = useState(initial?.subject ?? "");
   const [design, setDesign] = useState<TemplateDesign>(
@@ -1190,6 +1418,13 @@ export function Editor({ initial, presets }: EditorProps) {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [testSend, setTestSend] = useState<TestSendState>({ kind: "idle" });
+  const [testForm, setTestForm] = useState<TestForm>({
+    fromName: sendConfig.defaultFromName,
+    fromLocal: "hello",
+    domainId: sendConfig.domains[0]?.id ?? "",
+    to: sendConfig.userEmail,
+    vars: {},
+  });
   const [dirty, setDirty] = useState(false);
   const [drag, setDrag] = useState<DragState | null>(null);
   const [insertMenuAt, setInsertMenuAt] = useState<number | null>(null);
@@ -1429,12 +1664,36 @@ export function Editor({ initial, presets }: EditorProps) {
 
   /* -------- send test -------- */
 
-  const handleTestSend = async (): Promise<void> => {
+  // Open the dialog, seeding variable values with sensible sample defaults for
+  // exactly the variables this template uses.
+  const openTestForm = (): void => {
+    const names = collectVars(subject, design);
+    setTestForm((f) => ({
+      ...f,
+      // keep the user's from/to/name if they set them earlier this session,
+      // but re-derive the default domain if it's gone stale.
+      domainId:
+        sendConfig.domains.some((d) => d.id === f.domainId) && f.domainId
+          ? f.domainId
+          : (sendConfig.domains[0]?.id ?? ""),
+      vars: Object.fromEntries(
+        names.map((n) => [n, f.vars[n] ?? VAR_SAMPLES[n] ?? ""]),
+      ),
+    }));
+    setTestSend({ kind: "form" });
+  };
+
+  const submitTestSend = async (): Promise<void> => {
     setTestSend({ kind: "sending" });
     try {
       const fd = new FormData();
       fd.set("subject", subject);
       fd.set("design", JSON.stringify(design));
+      fd.set("to", testForm.to.trim());
+      fd.set("from_name", testForm.fromName.trim());
+      fd.set("from_local", testForm.fromLocal.trim());
+      fd.set("domain_id", testForm.domainId);
+      fd.set("vars", JSON.stringify(testForm.vars));
       const res = await fetch("/api/builder/test-send", { method: "POST", body: fd });
       const body = (await res.json().catch(() => null)) as {
         id?: string;
@@ -1668,7 +1927,7 @@ export function Editor({ initial, presets }: EditorProps) {
             type="button"
             className={`${btnSecondary} whitespace-nowrap px-3 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-50`}
             disabled={testSend.kind === "sending"}
-            onClick={() => void handleTestSend()}
+            onClick={openTestForm}
           >
             {testSend.kind === "sending" ? "Sending…" : "Send test"}
           </button>
@@ -1682,6 +1941,17 @@ export function Editor({ initial, presets }: EditorProps) {
           </button>
         </div>
       </header>
+
+      {/* ---------------- Send-test dialog ---------------- */}
+      {testSend.kind === "form" ? (
+        <TestSendDialog
+          form={testForm}
+          setForm={setTestForm}
+          domains={sendConfig.domains}
+          onCancel={() => setTestSend({ kind: "idle" })}
+          onSend={() => void submitTestSend()}
+        />
+      ) : null}
 
       {/* ---------------- Test-send toast ---------------- */}
       {testSend.kind === "ok" ? (

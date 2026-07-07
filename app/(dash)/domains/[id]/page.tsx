@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { and, eq } from "drizzle-orm";
-import { db, domains } from "@/lib/db";
+import { and, desc, eq } from "drizzle-orm";
+import { db, domains, inboundEmails } from "@/lib/db";
 import { requireUser } from "@/lib/auth-user";
 import { getActiveTeam } from "@/lib/team";
 import { dnsRecordsForDomain } from "@/lib/dkim";
@@ -17,6 +17,8 @@ import {
 } from "@/components/ui";
 import { CopyButton } from "@/components/copy-button";
 import { LiveVerify } from "@/components/domains/live-verify";
+import { VerifyMx } from "@/components/domains/verify-mx";
+import { InboundPoll } from "@/components/domains/inbound-poll";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +45,16 @@ export default async function DomainDetailPage({
   const base = publicUrl();
   const mxHost = base ? new URL(base).hostname : "your-server-hostname";
   const sesEndpoint = base ? `${base}/api/inbound/ses` : null;
+
+  const [lastInbound] = await db
+    .select()
+    .from(inboundEmails)
+    .where(eq(inboundEmails.domainId, domain.id))
+    .orderBy(desc(inboundEmails.createdAt))
+    .limit(1);
+
+  const fullyVerified =
+    domain.status === "verified" && domain.dkimVerified && domain.spfVerified;
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -147,9 +159,14 @@ export default async function DomainDetailPage({
             </code>
             <CopyButton value={`10 ${mxHost}`} />
           </div>
+          <VerifyMx
+            domainId={domain.id}
+            initialVerified={domain.mxVerified}
+            initialCheckedAt={domain.mxCheckedAt?.getTime() ?? null}
+          />
         </div>
 
-        <div>
+        <div className="mb-4">
           <p className="mb-2 text-sm text-fg">2. Amazon SES receiving</p>
           <p className="mb-2 text-xs text-fg-muted">
             Already receiving through SES? Create a receipt rule that publishes
@@ -169,14 +186,63 @@ export default async function DomainDetailPage({
             </p>
           )}
         </div>
+
+        <div className="border-t border-hairline pt-4">
+          <p className="mb-2 text-sm text-fg">Test receiving</p>
+          {lastInbound ? (
+            <p className="text-xs text-fg-muted">
+              Last received:{" "}
+              <Link
+                href={`/emails/inbound/${lastInbound.id}`}
+                className="text-lime hover:underline"
+              >
+                {lastInbound.from} → {lastInbound.subject || "(no subject)"}
+              </Link>{" "}
+              <span className="font-mono text-[11px] tabular-nums">
+                {fmtDate(lastInbound.createdAt)}
+              </span>
+            </p>
+          ) : (
+            <>
+              <p className="text-xs text-fg-muted">
+                No inbound mail received yet for this domain. Once one of the
+                methods above is set up, send a test message to any address
+                at{" "}
+                <code className="font-mono text-fg">{domain.name}</code> — e.g.{" "}
+                <code className="font-mono text-fg">
+                  probe@{domain.name}
+                </code>{" "}
+                — and it&apos;ll show up here, or in{" "}
+                <Link
+                  href="/emails/inbound"
+                  className="text-lime hover:underline"
+                >
+                  Emails → Receiving
+                </Link>
+                . This panel checks for it automatically.
+              </p>
+              <InboundPoll />
+            </>
+          )}
+        </div>
       </Card>
 
       <div className="flex items-center gap-3">
         <form action={verifyDomainAction}>
           <input type="hidden" name="id" value={domain.id} />
-          <button type="submit" className={btnPrimary}>
-            Verify DNS records
-          </button>
+          {fullyVerified ? (
+            <button
+              type="submit"
+              className="text-sm text-fg-muted hover:text-fg hover:underline"
+              title="All records verified — re-check if you suspect DNS drift"
+            >
+              Re-check DNS records
+            </button>
+          ) : (
+            <button type="submit" className={btnPrimary}>
+              Verify DNS records
+            </button>
+          )}
         </form>
         <form action={deleteDomainAction}>
           <input type="hidden" name="id" value={domain.id} />

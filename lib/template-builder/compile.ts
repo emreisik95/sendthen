@@ -268,8 +268,13 @@ export function compileDesign(design: TemplateDesign): string {
     `<meta charset="utf-8"/>`,
     `<meta name="viewport" content="width=device-width, initial-scale=1"/>`,
     `<meta name="x-apple-disable-message-reformatting"/>`,
+    // Declare dark-mode awareness so clients (Apple Mail, iCloud) honour the
+    // inline colors instead of blindly inverting them — that inversion is what
+    // turned the light card muddy grey in dark mode.
+    `<meta name="color-scheme" content="light dark"/>`,
+    `<meta name="supported-color-schemes" content="light dark"/>`,
     `<title></title>`,
-    `<style>@media (max-width:640px){ .container{width:100%!important} .stack{display:block!important;width:100%!important} }</style>`,
+    `<style>:root{color-scheme:light dark;supported-color-schemes:light dark}@media (max-width:640px){ .container{width:100%!important} .stack{display:block!important;width:100%!important} }</style>`,
     `</head>`,
     `<body style="margin:0;padding:0;background-color:${escAttr(g.backgroundColor)};">`,
     `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:${escAttr(g.backgroundColor)};">`,

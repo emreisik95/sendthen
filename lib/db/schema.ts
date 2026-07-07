@@ -160,6 +160,11 @@ export const domains = sqliteTable("domains", {
   spfVerified: integer("spf_verified", { mode: "boolean" })
     .notNull()
     .default(false),
+  // receiving: MX record for this domain resolves to this instance's host
+  mxVerified: integer("mx_verified", { mode: "boolean" })
+    .notNull()
+    .default(false),
+  mxCheckedAt: integer("mx_checked_at", { mode: "timestamp_ms" }),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
   verifiedAt: integer("verified_at", { mode: "timestamp_ms" }),
   lastCheckedAt: integer("last_checked_at", { mode: "timestamp_ms" }),

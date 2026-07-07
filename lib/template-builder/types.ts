@@ -202,7 +202,9 @@ export function defaultBlock(type: BlockType): Block {
         id,
         type,
         text: "Acme Inc · 123 Street, City",
-        showUnsubscribe: false,
+        // On by default — every non-transactional email should offer a way out.
+        // Turn it off explicitly for transactional templates (receipts, OTPs).
+        showUnsubscribe: true,
       };
     case "html":
       return { id, type, html: "<!-- raw html -->" };

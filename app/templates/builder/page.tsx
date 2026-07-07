@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { and, eq } from "drizzle-orm";
-import { db, templates } from "@/lib/db";
+import { db, domains, templates } from "@/lib/db";
 import { requireUser } from "@/lib/auth-user";
 import { getActiveTeam } from "@/lib/team";
 import { PRESETS } from "@/lib/template-builder/presets";
@@ -55,5 +55,23 @@ export default async function BuilderPage({
     design: { version: 1, styles: { ...DEFAULT_STYLES }, blocks: [] },
   };
 
-  return <Editor initial={initial} presets={PRESETS} />;
+  // Verified sending domains — the "Send test" dialog lets the user pick the
+  // from address (unverified domains can't send, so they're excluded).
+  const verified = await db
+    .select({ id: domains.id, name: domains.name })
+    .from(domains)
+    .where(and(eq(domains.teamId, team.id), eq(domains.status, "verified")));
+
+  return (
+    <Editor
+      initial={initial}
+      presets={PRESETS}
+      sendConfig={{
+        domains: verified,
+        userEmail: user.email,
+        // "sendthen test" was a poor sender name — default to the team name.
+        defaultFromName: team.name,
+      }}
+    />
+  );
 }
