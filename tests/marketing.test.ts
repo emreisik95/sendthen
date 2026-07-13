@@ -6,9 +6,30 @@ import {
   comparisonRows,
   featureGroups,
   forbiddenMarketingClaims,
+  landingCtaPaths,
   landingCopy,
   outcomePillars,
 } from "@/lib/marketing";
+
+const requiredForbiddenClaims = [
+  "inbox confirmed",
+  "better deliverability",
+  "zero vendors",
+  "unlimited everything",
+  "drop-in replacement",
+] as const;
+
+const officialProductHosts = {
+  sendthen: ["github.com", "sendthen.net"],
+  resend: ["resend.com"],
+  postmark: ["postmarkapp.com"],
+  sendGrid: ["twilio.com"],
+  mailgun: ["mailgun.com"],
+} as const;
+
+function isSameOrSubdomain(hostname: string, rootHost: string): boolean {
+  return hostname === rootHost || hostname.endsWith(`.${rootHost}`);
+}
 
 describe("landing marketing model", () => {
   it("leads with ownership", () => {
@@ -28,24 +49,49 @@ describe("landing marketing model", () => {
   });
 
   it("does not ship rejected claims", () => {
+    expect(forbiddenMarketingClaims).toEqual(requiredForbiddenClaims);
+
     const serialized = JSON.stringify({
+      landingCtaPaths,
       landingCopy,
+      outcomePillars,
       featureGroups,
+      comparisonProducts,
       comparisonRows,
+      comparisonCaveat,
     }).toLowerCase();
 
-    for (const claim of forbiddenMarketingClaims) {
+    for (const claim of requiredForbiddenClaims) {
       expect(serialized).not.toContain(claim);
     }
   });
 
-  it("uses HTTPS for every official comparison source", () => {
-    const sourceUrls = comparisonProducts.flatMap((product) =>
-      product.sources.map((source) => source.url),
-    );
+  it("pins the five named comparison products", () => {
+    expect(
+      comparisonProducts.map(({ key, name }) => ({ key, name })),
+    ).toEqual([
+      { key: "sendthen", name: "Sendthen" },
+      { key: "resend", name: "Resend" },
+      { key: "postmark", name: "Postmark" },
+      { key: "sendGrid", name: "SendGrid" },
+      { key: "mailgun", name: "Mailgun" },
+    ]);
+  });
 
-    expect(sourceUrls.length).toBeGreaterThan(0);
-    for (const url of sourceUrls) expect(url).toMatch(/^https:\/\//);
+  it("uses HTTPS official sources for every comparison product", () => {
+    for (const product of comparisonProducts) {
+      expect(product.sources.length).toBeGreaterThan(0);
+
+      for (const source of product.sources) {
+        const url = new URL(source.url);
+        expect(url.protocol).toBe("https:");
+        expect(
+          officialProductHosts[product.key].some((rootHost) =>
+            isSameOrSubdomain(url.hostname, rootHost),
+          ),
+        ).toBe(true);
+      }
+    }
   });
 
   it("lists at least three concrete capabilities per product group", () => {
@@ -77,6 +123,23 @@ describe("landing marketing model", () => {
     expect(comparisonCaveat).toBe(
       "Self-hosting removes Sendthen software usage fees. Infrastructure and delivery-provider charges still apply.",
     );
-    expect(outcomePillars).toHaveLength(3);
+  });
+
+  it("defines three distinct, concrete outcome pillars", () => {
+    expect(outcomePillars.map((pillar) => pillar.key)).toEqual([
+      "controlPlane",
+      "transportFreedom",
+      "fullEmailLoop",
+    ]);
+
+    const titles = outcomePillars.map((pillar) => pillar.title.trim());
+    const descriptions = outcomePillars.map((pillar) =>
+      pillar.description.trim(),
+    );
+
+    for (const title of titles) expect(title).not.toBe("");
+    for (const description of descriptions) expect(description).not.toBe("");
+    expect(new Set(titles).size).toBe(outcomePillars.length);
+    expect(new Set(descriptions).size).toBe(outcomePillars.length);
   });
 });
