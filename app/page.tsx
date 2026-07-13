@@ -1,65 +1,33 @@
 import Link from "next/link";
-import { btnPrimary, btnSecondary } from "@/components/ui";
-import { DeliveryTrace } from "@/components/landing/trace";
-import { CodeTabs } from "@/components/landing/code-tabs";
-
-const FEATURES = [
-  {
-    title: "Bring your own pipes",
-    body: "Amazon SES, any SMTP relay, direct-to-MX, or a zero-network sandbox — per team, switchable in Settings. SES runs on signed HTTP, no SDK.",
-  },
-  {
-    title: "Tuned for the inbox",
-    body: "Verified sending domains with one-click DNS checks, 2048-bit DKIM per domain, automatic bounce & complaint suppression via SES feedback.",
-  },
-  {
-    title: "Opens, clicks, webhooks",
-    body: "Signed tracking pixel and link redirects, svix-compatible HMAC webhooks with up to 5 delivery attempts and backoff — nine event types, delivered and logged.",
-  },
-  {
-    title: "Broadcasts & templates",
-    body: "Audiences, per-contact {{variables}}, RFC 8058 one-click unsubscribe, reusable templates, batch and scheduled sends — the marketing side, self-hosted too.",
-  },
-  {
-    title: "Inbound too",
-    body: "Receive mail on your domains via MX, SES, or HTTP ingest. Read parsed messages in the dashboard and forward them anywhere.",
-  },
-  {
-    title: "A no-code studio",
-    body: "A visual template builder with 12 blocks and starter presets. Designs stay re-editable and compile to bulletproof table HTML.",
-  },
-];
-
-const FACTS = [
-  ["4", "transports"],
-  ["12", "builder blocks"],
-  ["8", "API scopes"],
-  ["9", "webhook events"],
-];
-
-const CHECKLIST = [
-  "teams & invites",
-  "scoped API keys",
-  "batch sending",
-  "scheduled sends",
-  "idempotency keys",
-  "attachments",
-  "templates + variables",
-  "broadcasts + one-click unsubscribe",
-  "suppression list",
-  "SES / SMTP / direct / sandbox",
-  "open & click tracking",
-  "svix-compatible webhooks",
-  "inbound email + forwarding",
-  "analytics",
-  "one SQLite file",
-];
-
-const QUICKSTART = `git clone https://github.com/emreisik95/sendthen && cd sendthen
-docker compose up -d
-# open http://localhost:3000 → create the admin account`;
+import {
+  comparisonCaveat,
+  comparisonDate,
+  comparisonMethodology,
+  comparisonProducts,
+  comparisonRows,
+  featureGroups,
+  landingCopy,
+  operationsNote,
+  outcomePillars,
+  primaryNavigation,
+  proofStages,
+  quickstartLines,
+} from "@/lib/marketing";
 
 const GITHUB_URL = "https://github.com/emreisik95/sendthen";
+
+const API_REQUEST = `POST /api/v1/emails HTTP/1.1
+Authorization: Bearer st_••••••••
+Content-Type: application/json
+Idempotency-Key: export-ready-42
+
+{
+  "from": "Acme <updates@acme.test>",
+  "to": "ada@example.net",
+  "subject": "Your export is ready",
+  "html": "<p>Your export is ready to download.</p>",
+  "tags": { "flow": "export" }
+}`;
 
 const JSON_LD = {
   "@context": "https://schema.org",
@@ -67,352 +35,497 @@ const JSON_LD = {
   name: "sendthen",
   applicationCategory: "DeveloperApplication",
   operatingSystem: "Web",
-  offers: {
-    "@type": "Offer",
-    price: "0",
-    priceCurrency: "USD",
-  },
   url: "https://sendthen.net",
   sameAs: [GITHUB_URL],
+  license: "https://opensource.org/license/mit",
   description:
-    "Self-hosted transactional email platform. Send, track, deliver.",
+    "Own your email stack with an open-source, self-hosted email control plane and your choice of delivery transport.",
 };
 
-function GitHubMark({ className = "" }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 16 16"
-      width="16"
-      height="16"
-      fill="currentColor"
-      aria-hidden
-      className={className}
-    >
-      <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z" />
-    </svg>
-  );
-}
+const BUTTON_BASE =
+  "inline-flex items-center justify-center gap-1 rounded-[0.65rem] border border-transparent px-[1.1rem] py-3 text-center text-sm font-bold leading-tight no-underline transition-[background-color,border-color,box-shadow,color,transform] duration-150 motion-safe:hover:-translate-y-px";
+const BUTTON_PRIMARY = `${BUTTON_BASE} bg-lime text-on-lime shadow-[0_10px_34px_rgba(198,255,0,0.13)] hover:bg-lime-hover hover:text-on-lime hover:shadow-[0_14px_42px_rgba(198,255,0,0.2)]`;
+const BUTTON_SECONDARY = `${BUTTON_BASE} border-white/20 bg-white/[0.035] text-fg hover:border-lime/50 hover:bg-lime/[0.055]`;
+const KICKER =
+  "font-mono text-[0.72rem] font-semibold uppercase tracking-[0.12em] text-lime";
+const SECTION_TITLE =
+  "mt-3 max-w-[13ch] text-balance text-[clamp(2.25rem,5vw,4.35rem)] font-bold leading-[1.02] tracking-[-0.055em]";
+const SECTION_COPY = "text-base leading-7 text-[var(--landing-text-secondary)]";
+const CONSOLE_LABEL =
+  "flex items-center justify-between gap-3 px-4 py-3 font-mono text-[0.61rem] uppercase tracking-[0.12em] text-[var(--landing-text-tertiary)]";
+const PROJECT_FACTS = ["MIT licensed", "One container", "SQLite-backed"] as const;
+const PRODUCT_SPANS = [
+  "md:col-span-7",
+  "md:col-span-5",
+  "md:col-span-5",
+  "md:col-span-7",
+] as const;
 
 export default function Landing() {
   return (
-    <main className="relative overflow-hidden">
+    <div className="landing-shell relative isolate min-w-0 overflow-x-clip bg-bg">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
       />
-      {/* faint grid + lime halo */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{
-          backgroundImage:
-            "linear-gradient(var(--hairline) 1px, transparent 1px), linear-gradient(90deg, var(--hairline) 1px, transparent 1px)",
-          backgroundSize: "56px 56px",
-          maskImage:
-            "radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 75%)",
-        }}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute left-1/2 top-[-240px] h-[480px] w-[720px] -translate-x-1/2 rounded-full"
-        style={{
-          background: "var(--lime-glow)",
-          filter: "blur(140px)",
-          opacity: 0.5,
-        }}
-      />
 
-      <div className="relative mx-auto max-w-5xl px-6">
-        {/* nav */}
-        <nav className="flex items-center justify-between py-6">
-          <span className="font-mono text-lg font-medium">
+      <a className="landing-skip-link" href="#main-content">
+        Skip to main content
+      </a>
+
+      <header className="landing-header sticky top-0 z-50 border-b border-hairline">
+        <nav
+          className="landing-container flex min-h-[4.25rem] min-w-0 items-center gap-2 sm:gap-4"
+          aria-label="Primary"
+        >
+          <Link
+            className="inline-flex shrink-0 items-center font-mono text-[1.05rem] font-semibold leading-none tracking-[-0.04em] text-fg no-underline"
+            href="/"
+            aria-label="sendthen home"
+          >
             send<span className="text-lime">then</span>
-          </span>
-          <div className="flex items-center gap-3">
+          </Link>
+
+          <div className="ml-auto hidden min-w-0 items-center gap-0.5 lg:flex">
+            {primaryNavigation.map((item) => (
+              <a
+                className="inline-flex min-h-11 items-center rounded-lg px-3 text-[0.82rem] font-medium text-[var(--landing-text-secondary)] no-underline transition-colors hover:text-fg"
+                key={item.label}
+                href={item.href}
+                target={item.href.startsWith("https://") ? "_blank" : undefined}
+                rel={
+                  item.href.startsWith("https://")
+                    ? "noopener noreferrer"
+                    : undefined
+                }
+              >
+                {item.label}
+                {item.href.startsWith("https://") ? (
+                  <>
+                    <span aria-hidden> ↗</span>
+                    <span className="sr-only"> (opens in a new tab)</span>
+                  </>
+                ) : null}
+              </a>
+            ))}
+          </div>
+
+          <div className="ml-auto flex items-center gap-2 lg:ml-0">
             <Link
-              href="/docs"
-              className="px-3 py-2 text-sm text-fg-muted transition-colors hover:text-fg"
+              className="hidden min-h-11 items-center rounded-lg px-3 text-[0.82rem] font-medium text-[var(--landing-text-secondary)] no-underline transition-colors hover:text-fg sm:inline-flex"
+              href="/login"
             >
-              Docs
-            </Link>
-            <a
-              href={GITHUB_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-3 py-2 text-sm text-fg-muted transition-colors hover:text-fg"
-            >
-              <GitHubMark />
-              GitHub
-            </a>
-            <Link href="/login" className={btnSecondary}>
               Sign in
+            </Link>
+            <Link className={`${BUTTON_PRIMARY} min-h-10 px-4 py-2 text-[0.8rem]`} href="#self-host">
+              Self-host
             </Link>
           </div>
         </nav>
+      </header>
 
-        {/* hero */}
-        <section className="pb-16 pt-20 text-center">
-          <p
-            className="st-up mb-4 font-mono text-xs uppercase tracking-[0.2em] text-fg-faint"
-            style={{ animationDelay: "0.05s" }}
-          >
-            self-hosted transactional email
-          </p>
-          <h1
-            className="st-up mx-auto max-w-3xl text-[44px] font-bold leading-[1.05] tracking-[-1.5px] sm:text-[56px]"
-            style={{ animationDelay: "0.15s" }}
-          >
-            Email that is <span className="text-lime">deliverable.</span>
-          </h1>
-          <p
-            className="st-up mx-auto mt-6 max-w-xl text-lg text-fg-muted"
-            style={{ animationDelay: "0.25s" }}
-          >
-            An open-source, Resend-compatible email platform you run yourself.
-            Accounts for your team, Amazon SES or any SMTP behind it, DKIM,
-            tracking, broadcasts — one container, zero vendors.
-          </p>
-          <div
-            className="st-up mt-9 flex items-center justify-center gap-3"
-            style={{ animationDelay: "0.35s" }}
-          >
-            <Link href="/login" className={`${btnPrimary} st-glow px-6 py-3`}>
-              Open dashboard →
-            </Link>
-            <Link href="/docs" className={`${btnSecondary} px-6 py-3`}>
-              Read the docs
-            </Link>
-          </div>
-          <p
-            className="st-up mt-5 font-mono text-xs text-fg-faint"
-            style={{ animationDelay: "0.42s" }}
-          >
-            docker compose up -d · MIT licensed · your data stays yours
-          </p>
-
-          {/* signature: live delivery trace */}
-          <div
-            className="st-up mx-auto mt-14 max-w-3xl"
-            style={{ animationDelay: "0.5s" }}
-          >
-            <DeliveryTrace />
-          </div>
-        </section>
-
-        {/* facts strip */}
-        <section className="border-y border-hairline py-6">
-          <dl className="grid grid-cols-2 gap-6 text-center sm:grid-cols-4">
-            {FACTS.map(([value, label]) => (
-              <div key={label}>
-                <dt className="sr-only">{label}</dt>
-                <dd className="font-mono text-xl text-lime">{value}</dd>
-                <dd className="mt-1 text-xs uppercase tracking-wider text-fg-faint">
-                  {label}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-
-        {/* code */}
-        <section id="code" className="py-24">
-          <h2 className="mb-6 text-center text-[28px] font-semibold tracking-tight">
-            Your first email is one <span className="text-lime">POST</span>{" "}
-            away.
-          </h2>
-          <CodeTabs />
-        </section>
-
-        {/* features */}
-        <section className="pb-24">
-          <h2 className="mb-10 text-center text-[28px] font-semibold tracking-tight">
-            Every message,{" "}
-            <span className="text-lime">routed &amp; delivered.</span>
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map((f) => (
-              <div
-                key={f.title}
-                className="group rounded-[10px] border border-line bg-surface p-6 transition-all duration-200 hover:-translate-y-0.5 hover:border-lime/40 hover:bg-surface-2"
-              >
-                <h3 className="mb-2 font-medium transition-colors group-hover:text-lime">
-                  {f.title}
-                </h3>
-                <p className="text-sm leading-relaxed text-fg-muted">
-                  {f.body}
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* everything in the box */}
-        <section className="pb-24">
-          <h2 className="mb-8 text-center text-[28px] font-semibold tracking-tight">
-            Everything in <span className="text-lime">the box.</span>
-          </h2>
-          <ul className="mx-auto grid max-w-3xl gap-x-8 gap-y-2.5 sm:grid-cols-2 lg:grid-cols-3">
-            {CHECKLIST.map((item) => (
-              <li
-                key={item}
-                className="flex items-baseline gap-2 font-mono text-[13px] text-fg-muted"
-              >
-                <span aria-hidden className="text-lime">
-                  ✓
+      <main id="main-content">
+        <section
+          className="landing-hero relative py-[clamp(4rem,8vw,7.5rem)]"
+          aria-labelledby="hero-heading"
+        >
+          <div className="landing-container relative z-10 grid min-w-0 items-center gap-[clamp(2.75rem,6vw,6.5rem)] lg:grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)]">
+            <div className="min-w-0">
+              <p className={`${KICKER} landing-reveal`}>
+                <span className="text-[var(--landing-text-tertiary)]" aria-hidden>
+                  {"01 / "}
                 </span>
-                {item}
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        {/* pricing */}
-        <section className="pb-24">
-          <h2 className="mb-3 text-center text-[28px] font-semibold tracking-tight">
-            Simple <span className="text-lime">pricing.</span>
-          </h2>
-          <p className="mx-auto mb-10 max-w-md text-center text-sm text-fg-muted">
-            Hosted plans that stay cheaper than the incumbents — or self-host
-            and pay nothing, forever.
-          </p>
-          <div className="mx-auto grid max-w-3xl gap-4 sm:grid-cols-3">
-            {[
-              {
-                name: "Free",
-                price: "$0",
-                items: ["100 emails / day", "3,000 / month", "every feature included"],
-              },
-              {
-                name: "Pro",
-                price: "$10/mo",
-                items: [
-                  "50,000 emails / month",
-                  "no daily cap",
-                  "$0.50 per extra 1,000",
-                ],
-                featured: true,
-              },
-              {
-                name: "Self-hosted",
-                price: "free",
-                items: ["unlimited everything", "your server, your data", "MIT licensed"],
-              },
-            ].map((p) => (
-              <div
-                key={p.name}
-                className={`rounded-[10px] border p-6 ${
-                  p.featured
-                    ? "border-lime/50 bg-surface"
-                    : "border-line bg-surface"
-                }`}
+                {landingCopy.eyebrow}
+              </p>
+              <h1
+                id="hero-heading"
+                className="landing-reveal mt-4 max-w-[12ch] text-balance text-[clamp(2.85rem,10vw,5.7rem)] font-bold leading-[0.96] tracking-[-0.065em] lg:max-w-[10.5ch] lg:text-[clamp(3.2rem,6.4vw,5.7rem)]"
               >
-                <div className="flex items-baseline justify-between">
-                  <h3 className="font-medium">{p.name}</h3>
-                  <span className="font-mono text-lg text-lime">{p.price}</span>
+                {landingCopy.headline}
+              </h1>
+              <p className="landing-reveal mt-7 max-w-[39rem] text-[clamp(1rem,1.6vw,1.16rem)] leading-[1.72] text-[var(--landing-text-secondary)]">
+                {landingCopy.description}
+              </p>
+              <div className="landing-reveal mt-8 flex flex-wrap items-center gap-3">
+                <Link className={`${BUTTON_PRIMARY} min-h-12 max-sm:flex-1`} href={landingCopy.primaryCta.href}>
+                  {landingCopy.primaryCta.label}
+                  <span aria-hidden> →</span>
+                </Link>
+                <Link className={`${BUTTON_SECONDARY} min-h-12 max-sm:flex-1`} href={landingCopy.secondaryCta.href}>
+                  {landingCopy.secondaryCta.label}
+                </Link>
+              </div>
+              <ul className="landing-reveal mt-5 flex flex-wrap gap-2" aria-label="Project facts">
+                {PROJECT_FACTS.map((fact) => (
+                  <li
+                    className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.025] px-2.5 py-1.5 font-mono text-[0.7rem] text-[var(--landing-text-secondary)]"
+                    key={fact}
+                  >
+                    <span className="size-1.5 shrink-0 rounded-full bg-lime shadow-[0_0_12px_rgba(198,255,0,0.55)]" aria-hidden />
+                    {fact}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <figure className="landing-proof landing-reveal min-w-0 overflow-hidden rounded-3xl border border-white/15">
+              <figcaption className="flex min-h-12 items-center justify-between gap-3 border-b border-white/10 px-4 font-mono text-[0.68rem] text-[var(--landing-text-secondary)]">
+                <span className="flex items-center gap-1.5" aria-hidden>
+                  <i className="size-2 rounded-full bg-[var(--landing-text-tertiary)]" />
+                  <i className="size-2 rounded-full bg-[var(--landing-text-tertiary)] opacity-60" />
+                  <i className="size-2 rounded-full bg-[var(--landing-text-tertiary)] opacity-40" />
+                </span>
+                <span className="max-sm:hidden">delivery proof / live path</span>
+                <span className="text-lime">
+                  <span aria-hidden>● </span>ready
+                </span>
+              </figcaption>
+
+              <div className="min-w-0 border-b border-white/10" aria-label="Example API request">
+                <div className={CONSOLE_LABEL}>
+                  <span>request.http</span>
+                  <span>application/json</span>
                 </div>
-                <ul className="mt-4 space-y-1.5 text-sm text-fg-muted">
-                  {p.items.map((i) => (
-                    <li key={i}>
-                      <span className="text-lime">✓</span> {i}
+                <pre className="m-0 max-h-[18.25rem] max-w-full overflow-x-auto px-4 pb-5 font-mono text-[clamp(0.68rem,1.2vw,0.78rem)] leading-[1.72] text-[#dce3e8]">
+                  <code>{API_REQUEST}</code>
+                </pre>
+              </div>
+
+              <div className="px-4 pb-3">
+                <p className={CONSOLE_LABEL}>
+                  <span>message path</span>
+                  <span>owned control plane</span>
+                </p>
+                <ol className="py-1">
+                  {proofStages.map((stage, index) => (
+                    <li
+                      className="landing-pipeline-step relative grid min-w-0 grid-cols-[2rem_minmax(0,1fr)] items-start gap-3 py-2 max-sm:grid-cols-[1.75rem_minmax(0,1fr)]"
+                      key={stage.key}
+                    >
+                      <span className="relative z-10 inline-flex size-8 items-center justify-center rounded-lg border border-lime/35 bg-[#0d100c] font-mono text-[0.58rem] text-lime max-sm:size-7" aria-hidden>
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      <div className="min-w-0">
+                        <strong className="block text-[0.78rem] font-semibold text-fg">
+                          {stage.label}
+                        </strong>
+                        <span className="block [overflow-wrap:anywhere] font-mono text-[0.66rem] leading-relaxed text-[var(--landing-text-tertiary)]">
+                          {stage.detail}
+                        </span>
+                      </div>
                     </li>
                   ))}
-                </ul>
+                </ol>
               </div>
-            ))}
+
+              <div className="flex items-center justify-between gap-4 border-t border-lime/20 bg-lime/[0.055] px-4 py-3 max-md:flex-col max-md:items-start max-md:gap-1">
+                <span className="font-mono text-[0.62rem] uppercase tracking-[0.1em] text-[var(--landing-text-tertiary)]">
+                  example SMTP outcome
+                </span>
+                <strong className="text-end font-mono text-[0.69rem] font-semibold text-lime max-md:text-start">
+                  <span aria-hidden>250 · </span>accepted by receiving server
+                </strong>
+              </div>
+            </figure>
           </div>
         </section>
 
-        {/* self-host */}
-        <section className="pb-24">
-          <h2 className="mb-6 text-center text-[28px] font-semibold tracking-tight">
-            Self-host in <span className="text-lime">a minute.</span>
-          </h2>
-          <div className="mx-auto max-w-2xl overflow-hidden rounded-[14px] border border-line bg-surface-3">
-            <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
-              <span className="font-mono text-xs text-fg-faint">
-                quickstart.sh
-              </span>
-              <span className="font-mono text-xs text-lime">3 lines</span>
+        <section className="py-[var(--landing-section-space)]" aria-labelledby="outcomes-heading">
+          <div className="landing-container">
+            <div className="grid items-end gap-5 md:grid-cols-[minmax(0,0.9fr)_minmax(18rem,0.72fr)] md:gap-[clamp(1.5rem,5vw,6rem)]">
+              <div>
+                <p className={KICKER}>Operating model</p>
+                <h2 id="outcomes-heading" className={SECTION_TITLE}>
+                  Ownership where it matters.
+                </h2>
+              </div>
+              <p className={SECTION_COPY}>
+                Keep the application surface your team needs while retaining a
+                clear boundary between the control plane, the transport, and the
+                infrastructure you operate.
+              </p>
             </div>
-            <pre className="overflow-x-auto p-5 font-mono text-[13px] leading-relaxed text-fg-muted">
-              {QUICKSTART}
-            </pre>
+
+            <div className="mt-[clamp(2.5rem,5vw,4.5rem)] grid divide-y divide-white/10 border-y border-white/10 md:grid-cols-3 md:divide-x md:divide-y-0">
+              {outcomePillars.map((pillar, index) => (
+                <article className="min-w-0 p-[clamp(1.6rem,3vw,2.5rem)]" key={pillar.key}>
+                  <p className="font-mono text-[0.64rem] font-semibold uppercase tracking-[0.12em] text-[var(--landing-text-tertiary)]" aria-hidden>
+                    0{index + 1}
+                  </p>
+                  <h3 className="mt-6 text-[clamp(1.2rem,2vw,1.55rem)] font-semibold leading-tight tracking-[-0.025em]">
+                    {pillar.title}
+                  </h3>
+                  <p className="mt-3 text-[0.91rem] leading-[1.7] text-[var(--landing-text-secondary)]">
+                    {pillar.description}
+                  </p>
+                </article>
+              ))}
+            </div>
           </div>
-          <p className="mx-auto mt-5 max-w-md text-center text-sm text-fg-muted">
-            One container, one SQLite file — back it up with a copy, move it
-            with a scp.
+        </section>
+
+        <section
+          id="product"
+          className="landing-product-section scroll-mt-24 border-y border-hairline py-[var(--landing-section-space)]"
+          aria-labelledby="product-heading"
+        >
+          <div className="landing-container">
+            <div className="grid items-end gap-5 md:grid-cols-[minmax(0,0.9fr)_minmax(18rem,0.72fr)] md:gap-[clamp(1.5rem,5vw,6rem)]">
+              <div>
+                <p className={KICKER}>Product surfaces</p>
+                <h2 id="product-heading" className={SECTION_TITLE}>
+                  The whole email loop, in one system.
+                </h2>
+              </div>
+              <p className={SECTION_COPY}>
+                Transactional and broadcast sending, inbound workflows, and
+                reusable visual templates share the same control plane and
+                operational context.
+              </p>
+            </div>
+
+            <div className="mt-[clamp(2.5rem,6vw,5rem)] grid min-w-0 grid-cols-1 gap-4 md:grid-cols-12">
+              {featureGroups.map((group, index) => (
+                <article
+                  className={`landing-product-card ${PRODUCT_SPANS[index]} flex min-h-96 min-w-0 flex-col overflow-hidden rounded-[1.125rem] border border-white/10 p-[clamp(1.5rem,3vw,2.25rem)] max-md:min-h-0`}
+                  key={group.key}
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <p className="font-mono text-[0.64rem] font-semibold uppercase tracking-[0.12em] text-[var(--landing-text-tertiary)]">
+                      Surface 0{index + 1}
+                    </p>
+                    <span className="font-mono text-lg text-lime" aria-hidden>
+                      +
+                    </span>
+                  </div>
+                  <h3 className="mt-6 text-[clamp(1.2rem,2vw,1.55rem)] font-semibold leading-tight tracking-[-0.025em]">
+                    {group.title}
+                  </h3>
+                  <p className="mt-3 max-w-[38rem] text-[0.91rem] leading-[1.7] text-[var(--landing-text-secondary)]">
+                    {group.description}
+                  </p>
+                  <ul className="mt-auto pt-8 max-md:mt-0">
+                    {group.capabilities.map((capability) => (
+                      <li className="grid grid-cols-[1rem_minmax(0,1fr)] gap-2 border-t border-white/10 py-3 text-[0.83rem] leading-relaxed text-[var(--landing-text-secondary)]" key={capability}>
+                        <span className="font-mono text-lime" aria-hidden>
+                          →
+                        </span>
+                        <span>{capability}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="compare"
+          className="landing-compare-section scroll-mt-24 py-[var(--landing-section-space)]"
+          aria-labelledby="compare-heading"
+        >
+          <div className="landing-container">
+            <div className="grid items-end gap-5 md:grid-cols-[minmax(0,0.9fr)_minmax(18rem,0.72fr)] md:gap-[clamp(1.5rem,5vw,6rem)]">
+              <div>
+                <p className={KICKER}>
+                  Architecture comparison · checked{" "}
+                  <time dateTime={comparisonDate}>{comparisonDate}</time>
+                </p>
+                <h2 id="compare-heading" className={SECTION_TITLE}>
+                  Compare the ownership boundary.
+                </h2>
+              </div>
+              <p className={SECTION_COPY}>
+                This compares operating models, transport boundaries, testing,
+                and state portability. It is not a feature-completeness or
+                deliverability ranking.
+              </p>
+            </div>
+
+            <div className="landing-compare-panel mt-[clamp(2.5rem,5vw,4.5rem)] min-w-0 overflow-hidden rounded-[1.125rem] border border-white/10 bg-[var(--landing-panel-solid)]">
+              <div className="landing-table-scroll" role="region" aria-label="Email platform architecture comparison" tabIndex={0}>
+                <table>
+                  <caption className="sr-only">
+                    Architecture comparison of Sendthen, Resend, Postmark,
+                    SendGrid, and Mailgun, checked {comparisonDate}
+                  </caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Architecture property</th>
+                      {comparisonProducts.map((product) => (
+                        <th className={product.key === "sendthen" ? "landing-compare-sendthen" : undefined} key={product.key} scope="col">
+                          <span>{product.name}</span>
+                          {product.key === "sendthen" ? <small>this project</small> : null}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {comparisonRows.map((row) => (
+                      <tr key={row.key}>
+                        <th scope="row">{row.label}</th>
+                        {comparisonProducts.map((product) => (
+                          <td className={product.key === "sendthen" ? "landing-compare-sendthen" : undefined} key={product.key}>
+                            {row.values[product.key]}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="grid gap-px border-t border-white/10 bg-white/10 md:grid-cols-2">
+                <p className="bg-[var(--landing-panel-raised)] p-4 text-[0.76rem] leading-relaxed text-fg">
+                  {comparisonCaveat}
+                </p>
+                <p className="bg-[var(--landing-panel-raised)] p-4 text-[0.76rem] leading-relaxed text-[var(--landing-text-secondary)]">
+                  {comparisonMethodology}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-8" aria-labelledby="sources-heading">
+              <h3 id="sources-heading" className="font-mono text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-[var(--landing-text-secondary)]">
+                Official sources
+              </h3>
+              <div className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(min(100%,12rem),1fr))] gap-3">
+                {comparisonProducts.map((product) => (
+                  <article className="min-w-0 border-t border-white/10 pt-4" key={product.key}>
+                    <h4 className="text-[0.84rem] font-semibold">{product.name}</h4>
+                    <ul className="mt-2 space-y-2">
+                      {product.sources.map((source) => (
+                        <li key={source.url}>
+                          <a className="inline-block [overflow-wrap:anywhere] text-[0.72rem] leading-normal text-[var(--landing-text-secondary)] underline-offset-4 hover:text-lime" href={source.url} target="_blank" rel="noopener noreferrer">
+                            {source.label}
+                            <span aria-hidden> ↗</span>
+                            <span className="sr-only"> (opens in a new tab)</span>
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="self-host" className="scroll-mt-24 py-[var(--landing-section-space)]" aria-labelledby="self-host-heading">
+          <div className="landing-container">
+            <div className="grid min-w-0 items-center gap-[clamp(2.5rem,7vw,7rem)] lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)]">
+              <div>
+                <p className={KICKER}>Three-line quickstart</p>
+                <h2 id="self-host-heading" className={`${SECTION_TITLE} max-w-[13ch] lg:max-w-[10ch]`}>
+                  Run the control plane yourself.
+                </h2>
+                <p className={`${SECTION_COPY} mt-6 max-w-[34rem]`}>
+                  Clone the MIT-licensed repository, start the container, and
+                  open the local setup flow. Your deployment and transport
+                  remain explicit choices.
+                </p>
+              </div>
+
+              <div className="landing-quickstart min-w-0 overflow-hidden rounded-[1.125rem] border border-white/15 bg-[var(--landing-panel-solid)]">
+                <div className={`${CONSOLE_LABEL} border-b border-white/10`}>
+                  <span>terminal</span>
+                  <span>quickstart</span>
+                </div>
+                <pre className="m-0 max-w-full overflow-x-auto p-[clamp(1.25rem,3vw,2rem)] font-mono text-[clamp(0.72rem,1.3vw,0.83rem)] leading-[1.72] text-lime">
+                  <code>{quickstartLines.join("\n")}</code>
+                </pre>
+                <aside className="border-t border-white/10 bg-white/[0.025] px-[clamp(1.25rem,3vw,2rem)] py-4" aria-label="Operations note">
+                  <strong className="font-mono text-[0.66rem] uppercase tracking-[0.1em] text-fg">
+                    Operations note
+                  </strong>
+                  <p className="mt-2 text-[0.78rem] leading-relaxed text-[var(--landing-text-secondary)]">
+                    {operationsNote}
+                  </p>
+                </aside>
+              </div>
+            </div>
+
+            <div className="mt-[clamp(3rem,7vw,6rem)] grid min-w-0 gap-4 md:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)]">
+              <article className="landing-choice-primary min-w-0 rounded-[1.125rem] border border-lime/35 p-[clamp(1.5rem,4vw,2.5rem)]">
+                <p className="font-mono text-[0.64rem] font-semibold uppercase tracking-[0.12em] text-[var(--landing-text-tertiary)]">
+                  Choice 01 · primary
+                </p>
+                <h3 className="mt-6 text-[clamp(1.2rem,2vw,1.55rem)] font-semibold leading-tight tracking-[-0.025em]">
+                  Self-host Sendthen
+                </h3>
+                <p className="mt-3 max-w-[36rem] text-[0.9rem] leading-[1.7] text-[var(--landing-text-secondary)]">
+                  Operate the control plane and portable <code className="font-mono text-lime">/data</code> volume on infrastructure you choose, then select the transport that fits your system.
+                </p>
+                <a className={`${BUTTON_PRIMARY} mt-7 min-h-12`} href={GITHUB_URL} target="_blank" rel="noopener noreferrer">
+                  Get the MIT source
+                  <span aria-hidden> ↗</span>
+                  <span className="sr-only"> (opens in a new tab)</span>
+                </a>
+              </article>
+
+              <article className="min-w-0 rounded-[1.125rem] border border-white/10 bg-white/[0.025] p-[clamp(1.5rem,4vw,2.5rem)]">
+                <p className="font-mono text-[0.64rem] font-semibold uppercase tracking-[0.12em] text-[var(--landing-text-tertiary)]">
+                  Choice 02 · secondary
+                </p>
+                <h3 className="mt-6 text-[clamp(1.2rem,2vw,1.55rem)] font-semibold leading-tight tracking-[-0.025em]">
+                  Use the hosted service
+                </h3>
+                <p className="mt-3 max-w-[36rem] text-[0.9rem] leading-[1.7] text-[var(--landing-text-secondary)]">
+                  Use Sendthen without operating the deployment yourself. The
+                  hosted path stays a separate, optional choice.
+                </p>
+                <Link className={`${BUTTON_SECONDARY} mt-7 min-h-12`} href={landingCopy.secondaryCta.href}>
+                  {landingCopy.secondaryCta.label}
+                </Link>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section className="pb-[var(--landing-section-space)]" aria-labelledby="final-cta-heading">
+          <div className="landing-container">
+            <div className="landing-final-panel overflow-hidden rounded-3xl border border-lime/25 p-[clamp(2rem,7vw,5.5rem)]">
+              <p className={KICKER}>Your stack, your boundary</p>
+              <h2 id="final-cta-heading" className={`${SECTION_TITLE} max-w-[16ch]`}>
+                Own the control plane. Choose the route out.
+              </h2>
+              <p className={`${SECTION_COPY} mt-5 max-w-[42rem]`}>
+                Start with one container, keep the application state portable,
+                and decide how each message leaves your system.
+              </p>
+              <div className="mt-8 flex flex-wrap items-center gap-3">
+                <Link className={`${BUTTON_PRIMARY} min-h-12 max-sm:flex-1`} href={landingCopy.primaryCta.href}>
+                  {landingCopy.primaryCta.label}
+                  <span aria-hidden> →</span>
+                </Link>
+                <Link className={`${BUTTON_SECONDARY} min-h-12 max-sm:flex-1`} href="/docs">
+                  Read the docs
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="border-t border-hairline">
+        <div className="landing-container flex min-h-28 flex-col items-start justify-center gap-5 py-6 text-[0.76rem] text-[var(--landing-text-tertiary)] md:flex-row md:items-center md:justify-between md:gap-8">
+          <p className="flex flex-wrap items-center gap-3">
+            <span className="inline-flex items-center font-mono text-[0.9rem] font-semibold tracking-[-0.04em] text-fg" aria-label="sendthen">
+              send<span className="text-lime">then</span>
+            </span>
+            <span>MIT-licensed email control plane.</span>
           </p>
-          <div className="mt-6 flex items-center justify-center gap-3">
-            <Link href="/docs" className={btnSecondary}>
-              Read the docs
-            </Link>
-            <a
-              href={GITHUB_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={btnSecondary}
-            >
-              <GitHubMark />
-              Star on GitHub
+          <nav className="flex flex-wrap items-center gap-4" aria-label="Footer">
+            <a className="text-[var(--landing-text-secondary)] no-underline transition-colors hover:text-fg" href="#product">Product</a>
+            <a className="text-[var(--landing-text-secondary)] no-underline transition-colors hover:text-fg" href="#compare">Compare</a>
+            <Link className="text-[var(--landing-text-secondary)] no-underline transition-colors hover:text-fg" href="/docs">Docs</Link>
+            <a className="text-[var(--landing-text-secondary)] no-underline transition-colors hover:text-fg" href={GITHUB_URL} target="_blank" rel="noopener noreferrer">
+              GitHub<span className="sr-only"> (opens in a new tab)</span>
             </a>
-          </div>
-        </section>
-
-        {/* CTA band */}
-        <section className="pb-24">
-          <div
-            className="rounded-[14px] border border-lime/25 bg-surface p-10 text-center"
-            style={{ boxShadow: "inset 0 0 80px rgba(198,255,0,0.04)" }}
-          >
-            <h2 className="text-[28px] font-semibold tracking-tight">
-              Own your email pipeline{" "}
-              <span className="text-lime">tonight.</span>
-            </h2>
-            <p className="mx-auto mt-3 max-w-md text-sm text-fg-muted">
-              docker run, set a password, add your domain. Everything on this
-              page runs on your box.
-            </p>
-            <div className="mt-7 flex items-center justify-center gap-3">
-              <Link href="/docs" className={`${btnPrimary} px-6 py-3`}>
-                Get started →
-              </Link>
-              <Link href="/login" className={`${btnSecondary} px-6 py-3`}>
-                Open dashboard
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        {/* footer */}
-        <footer className="flex items-center justify-between border-t border-hairline py-8 text-xs text-fg-faint">
-          <span className="font-mono">
-            send<span className="text-lime">then</span> — email for developers
-          </span>
-          <span className="flex items-center gap-1.5 font-mono">
-            <a
-              href={GITHUB_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="transition-colors hover:text-fg"
-            >
-              GitHub
-            </a>
-            <span aria-hidden>·</span>
-            <Link href="/docs" className="transition-colors hover:text-fg">
-              Docs
-            </Link>
-            <span aria-hidden>·</span>
-            <a
-              href={`${GITHUB_URL}/blob/main/LICENSE`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="transition-colors hover:text-fg"
-            >
-              MIT
-            </a>
-          </span>
-        </footer>
-      </div>
-    </main>
+          </nav>
+        </div>
+      </footer>
+    </div>
   );
 }

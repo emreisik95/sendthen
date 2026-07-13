@@ -2,13 +2,18 @@ import { describe, expect, it } from "vitest";
 import {
   comparisonCaveat,
   comparisonDate,
+  comparisonMethodology,
   comparisonProducts,
   comparisonRows,
   featureGroups,
   forbiddenMarketingClaims,
   landingCtaPaths,
   landingCopy,
+  operationsNote,
   outcomePillars,
+  primaryNavigation,
+  proofStages,
+  quickstartLines,
 } from "@/lib/marketing";
 
 const requiredForbiddenClaims = [
@@ -141,5 +146,63 @@ describe("landing marketing model", () => {
     for (const description of descriptions) expect(description).not.toBe("");
     expect(new Set(titles).size).toBe(outcomePillars.length);
     expect(new Set(descriptions).size).toBe(outcomePillars.length);
+  });
+
+  it("orders the product proof stages from request through events", () => {
+    expect(proofStages.map((stage) => stage.key)).toEqual([
+      "request",
+      "queue",
+      "dkim",
+      "transport",
+      "events",
+    ]);
+  });
+
+  it("provides a three-line local quickstart", () => {
+    expect(quickstartLines).toHaveLength(3);
+    expect(quickstartLines.some((line) => /git clone/i.test(line))).toBe(true);
+    expect(quickstartLines).toContain("docker compose up -d");
+    expect(quickstartLines.some((line) => /localhost/i.test(line))).toBe(true);
+  });
+
+  it("states self-hosting and transport cost responsibilities", () => {
+    expect(operationsNote).toMatch(/infrastructure|hosting/i);
+    expect(operationsNote).toMatch(/responsib|operate|manage/i);
+    expect(operationsNote).toMatch(/transport|delivery/i);
+    expect(operationsNote).toMatch(/cost|charge/i);
+  });
+
+  it("provides primary anchors for Product and Compare", () => {
+    expect(primaryNavigation).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ label: "Product", href: "#product" }),
+        expect.objectContaining({ label: "Compare", href: "#compare" }),
+      ]),
+    );
+  });
+
+  it("describes Sendthen state as a portable data volume", () => {
+    const stateRow = comparisonRows.find((row) => row.key === "portableState");
+
+    expect(stateRow?.values.sendthen).toBe("Portable /data volume");
+  });
+
+  it("links Resend's official test-address documentation", () => {
+    const resend = comparisonProducts.find((product) => product.key === "resend");
+
+    expect(resend?.sources.map((source) => source.url)).toContain(
+      "https://resend.com/docs/knowledge-base/what-email-addresses-to-use-for-testing",
+    );
+  });
+
+  it("qualifies the comparison methodology", () => {
+    expect(comparisonMethodology).toMatch(/managed-service cells/i);
+    expect(comparisonMethodology).toMatch(/publicly documented offerings/i);
+    expect(comparisonMethodology).toContain(comparisonDate);
+    expect(comparisonMethodology).toMatch(/undocumented|private options/i);
+  });
+
+  it("limits provider charges to selected provider transports", () => {
+    expect(operationsNote).toMatch(/when.*provider.*selected/i);
   });
 });

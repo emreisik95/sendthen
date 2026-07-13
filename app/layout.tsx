@@ -13,12 +13,14 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 const DESCRIPTION =
-  "Self-hosted transactional email platform. Send, track, deliver.";
+  "An open-source, self-hosted email control plane with portable state and your choice of SES, SMTP relay, direct MX, or local sandbox transport.";
+
+const SOCIAL_TITLE = "sendthen — own your email stack";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://sendthen.net"),
   title: {
-    default: "sendthen — email for developers",
+    default: SOCIAL_TITLE,
     template: "%s — sendthen",
   },
   description: DESCRIPTION,
@@ -40,21 +42,21 @@ export const metadata: Metadata = {
     type: "website",
     url: "/",
     siteName: "sendthen",
-    title: "sendthen — email for developers",
+    title: SOCIAL_TITLE,
     description: DESCRIPTION,
     images: [
       {
         url: "/og.png",
         width: 1200,
         height: 630,
-        alt: "sendthen — email that is deliverable",
+        alt: "sendthen — own your email stack",
       },
     ],
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: "sendthen — email for developers",
+    title: SOCIAL_TITLE,
     description: DESCRIPTION,
     images: ["/og.png"],
   },

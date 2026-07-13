@@ -3,6 +3,24 @@ export interface MarketingCta {
   href: string;
 }
 
+export interface MarketingNavigationItem {
+  label: string;
+  href: string;
+}
+
+export type ProofStageKey =
+  | "request"
+  | "queue"
+  | "dkim"
+  | "transport"
+  | "events";
+
+export interface ProofStage {
+  key: ProofStageKey;
+  label: string;
+  detail: string;
+}
+
 export interface OutcomePillar {
   key: "controlPlane" | "transportFreedom" | "fullEmailLoop";
   title: string;
@@ -56,6 +74,50 @@ export const landingCtaPaths = {
   primary: "#self-host",
   secondary: "/signup",
 } as const;
+
+export const primaryNavigation = [
+  { label: "Product", href: "#product" },
+  { label: "Compare", href: "#compare" },
+  { label: "Docs", href: "/docs" },
+  { label: "GitHub", href: "https://github.com/emreisik95/sendthen" },
+] as const satisfies readonly MarketingNavigationItem[];
+
+export const proofStages = [
+  {
+    key: "request",
+    label: "API request",
+    detail: "POST /api/v1/emails · request validated",
+  },
+  {
+    key: "queue",
+    label: "SQLite queue",
+    detail: "message persisted · retry policy attached",
+  },
+  {
+    key: "dkim",
+    label: "2048-bit DKIM",
+    detail: "signed for the verified sending domain",
+  },
+  {
+    key: "transport",
+    label: "Selected transport",
+    detail: "SES, SMTP relay, direct MX, or local sandbox",
+  },
+  {
+    key: "events",
+    label: "Events & webhooks",
+    detail: "lifecycle event stored · signed webhook queued",
+  },
+] as const satisfies readonly ProofStage[];
+
+export const quickstartLines = [
+  "git clone https://github.com/emreisik95/sendthen && cd sendthen",
+  "docker compose up -d",
+  "# open http://localhost:3000",
+] as const satisfies readonly string[];
+
+export const operationsNote =
+  "You are responsible for hosting and operating the infrastructure. Transport or delivery-provider costs still apply when a provider is selected." as const;
 
 export const landingCopy = {
   eyebrow: "MIT-licensed email control plane",
@@ -171,6 +233,10 @@ export const comparisonProducts = [
         label: "Resend service plans",
         url: "https://resend.com/pricing",
       },
+      {
+        label: "Resend test-address documentation",
+        url: "https://resend.com/docs/knowledge-base/what-email-addresses-to-use-for-testing",
+      },
     ],
   },
   {
@@ -279,7 +345,7 @@ export const comparisonRows = [
     key: "portableState",
     label: "Application state",
     values: {
-      sendthen: "Portable SQLite file",
+      sendthen: "Portable /data volume",
       resend: "Provider-managed state",
       postmark: "Provider-managed state",
       sendGrid: "Provider-managed state",
@@ -301,6 +367,9 @@ export const comparisonRows = [
 
 export const comparisonCaveat =
   "Self-hosting removes Sendthen software usage fees. Infrastructure and delivery-provider charges still apply." as const;
+
+export const comparisonMethodology =
+  "Managed-service cells describe publicly documented offerings checked 2026-07-13; they do not claim that undocumented or private options cannot exist." as const;
 
 export const forbiddenMarketingClaims = [
   "inbox confirmed",
