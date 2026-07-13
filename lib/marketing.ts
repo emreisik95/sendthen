@@ -8,6 +8,11 @@ export interface MarketingNavigationItem {
   href: string;
 }
 
+export interface SocialPreviewImage {
+  url: string;
+  alt: string;
+}
+
 export type ProofStageKey =
   | "request"
   | "queue"
@@ -74,6 +79,11 @@ export const landingCtaPaths = {
   primary: "#self-host",
   secondary: "/signup",
 } as const;
+
+export const socialPreviewImage = {
+  url: "/og.png",
+  alt: "sendthen — own your email stack",
+} as const satisfies SocialPreviewImage;
 
 export const primaryNavigation = [
   { label: "Product", href: "#product" },

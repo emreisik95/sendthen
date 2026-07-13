@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
+import { socialPreviewImage } from "@/lib/marketing";
 import "./globals.css";
 
 const inter = Inter({
@@ -46,10 +47,9 @@ export const metadata: Metadata = {
     description: DESCRIPTION,
     images: [
       {
-        url: "/og.png",
+        ...socialPreviewImage,
         width: 1200,
         height: 630,
-        alt: "sendthen — own your email stack",
       },
     ],
     locale: "en_US",
@@ -58,7 +58,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: SOCIAL_TITLE,
     description: DESCRIPTION,
-    images: ["/og.png"],
+    images: [socialPreviewImage],
   },
   robots: {
     index: true,

@@ -14,6 +14,7 @@ import {
   primaryNavigation,
   proofStages,
   quickstartLines,
+  socialPreviewImage,
 } from "@/lib/marketing";
 
 const requiredForbiddenClaims = [
@@ -204,5 +205,11 @@ describe("landing marketing model", () => {
 
   it("limits provider charges to selected provider transports", () => {
     expect(operationsNote).toMatch(/when.*provider.*selected/i);
+  });
+
+  it("defines an ownership-focused social preview image", () => {
+    expect(socialPreviewImage.url).toBe("/og.png");
+    expect(socialPreviewImage.alt.trim()).not.toBe("");
+    expect(socialPreviewImage.alt).toMatch(/own/i);
   });
 });
