@@ -83,22 +83,20 @@ describe("dashboard shell source invariants", () => {
       /<header\b[^>]*className="[^"]*sticky[^"]*lg:hidden[^"]*"/,
     );
     expect(shellSource).toContain('aria-label="Open navigation"');
-    expect(shellSource).toContain('role="dialog"');
+    expect(shellSource).toMatch(/<dialog\b/);
+    expect(shellSource).toContain("ref={dialogRef}");
+    expect(shellSource).toContain("dialog.showModal()");
+    expect(shellSource).not.toContain('role="dialog"');
     expect(shellSource).toContain('aria-modal="true"');
     expect(shellSource).toContain('aria-label="Dashboard navigation"');
     expect(shellSource).toContain('aria-label="Close navigation"');
-    expect(shellSource).toContain('aria-label="Close navigation backdrop"');
-    expect(shellSource).toMatch(
-      /aria-label="Close navigation backdrop"[\s\S]*?onClick=\{closeMobileNavigation\}/,
-    );
-    expect(shellSource).toContain('event.key === "Escape"');
+    expect(shellSource).toContain("onCancel={handleDialogCancel}");
+    expect(shellSource).toContain("event.preventDefault()");
+    expect(shellSource).toContain("onClick={handleDialogBackdropClick}");
+    expect(shellSource).toContain("event.target === event.currentTarget");
     expect(shellSource).toContain(
-      'document.addEventListener("keydown", handleKeyDown)',
+      "onNavigate={closeMobileNavigationWithoutFocus}",
     );
-    expect(shellSource).toContain(
-      'document.removeEventListener("keydown", handleKeyDown)',
-    );
-    expect(shellSource).toContain("onNavigate={closeMobileNavigation}");
   });
 
   it("moves focus into the drawer and returns it to the opener", () => {
@@ -106,6 +104,66 @@ describe("dashboard shell source invariants", () => {
     expect(shellSource).toContain("closeButtonRef");
     expect(shellSource).toMatch(/closeButtonRef\.current\?\.focus\(\)/);
     expect(shellSource).toMatch(/menuButtonRef\.current\?\.focus\(\)/);
+  });
+
+  it("restores document scrolling after every modal lifecycle", () => {
+    expect(shellSource).toContain("const previousDocumentOverflow");
+    expect(shellSource).toContain("const previousBodyOverflow");
+    expect(shellSource).toContain(
+      'document.documentElement.style.overflow = "hidden"',
+    );
+    expect(shellSource).toContain('document.body.style.overflow = "hidden"');
+    expect(shellSource).toContain(
+      "document.documentElement.style.overflow = previousDocumentOverflow",
+    );
+    expect(shellSource).toContain(
+      "document.body.style.overflow = previousBodyOverflow",
+    );
+  });
+
+  it("closes without focus restoration when the desktop breakpoint matches", () => {
+    expect(shellSource).toContain(
+      'window.matchMedia("(min-width: 1024px)")',
+    );
+    expect(shellSource).toMatch(
+      /if \(event\.matches\)[\s\S]{0,100}closeMobileNavigation\(false\)/,
+    );
+    expect(shellSource).toContain(
+      'mediaQuery.addEventListener("change", handleBreakpointChange)',
+    );
+    expect(shellSource).toContain(
+      'mediaQuery.removeEventListener("change", handleBreakpointChange)',
+    );
+    expect(shellSource).toContain(
+      "mediaQuery.addListener(handleBreakpointChange)",
+    );
+    expect(shellSource).toContain(
+      "mediaQuery.removeListener(handleBreakpointChange)",
+    );
+  });
+
+  it("closes on pathname changes without focus restoration and resets both panels", () => {
+    const shellComponent = shellSource.slice(
+      shellSource.indexOf("export function DashboardShell"),
+    );
+
+    expect(shellComponent).toContain("const pathname = usePathname()");
+    expect(shellComponent).toContain("previousPathnameRef");
+    expect(shellComponent).toMatch(
+      /previousPathnameRef\.current !== pathname[\s\S]{0,180}closeMobileNavigation\(false\)/,
+    );
+    expect(shellSource).toContain('key={`desktop-${pathname}`}');
+    expect(shellSource).toContain('key={`mobile-${pathname}`}');
+  });
+
+  it("restores opener focus only for explicit user dismissals", () => {
+    expect(shellSource).toMatch(
+      /dismissMobileNavigation[\s\S]{0,160}closeMobileNavigation\(true\)/,
+    );
+    expect(shellSource).toMatch(
+      /closeMobileNavigationWithoutFocus[\s\S]{0,160}closeMobileNavigation\(false\)/,
+    );
+    expect(shellSource).toContain("onClick={dismissMobileNavigation}");
   });
 
   it("offers a skip target and a shrinkable, responsively padded main region", () => {

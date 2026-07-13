@@ -9,8 +9,10 @@ import {
   useRef,
   useState,
   type ComponentType,
+  type MouseEvent as ReactMouseEvent,
   type ReactNode,
   type SVGProps,
+  type SyntheticEvent,
 } from "react";
 import {
   completeOnboardingAction,
@@ -129,8 +131,13 @@ function DashboardLink({
   );
 }
 
-function DashboardNavigation({ onNavigate }: { onNavigate?: () => void }) {
-  const pathname = usePathname();
+function DashboardNavigation({
+  pathname,
+  onNavigate,
+}: {
+  pathname: string;
+  onNavigate?: () => void;
+}) {
   const configurationNavigationId = useId();
   const configurationActive = isConfigurationNavigationActive(pathname);
   const [configurationOpen, setConfigurationOpen] =
@@ -457,8 +464,10 @@ function SidebarContent({
   teamSummary,
   membershipSummaries,
   setupSummary,
+  pathname,
   onNavigate,
 }: Omit<DashboardShellProps, "children"> & {
+  pathname: string;
   onNavigate?: () => void;
 }) {
   return (
@@ -469,7 +478,7 @@ function SidebarContent({
         onNavigate={onNavigate}
       />
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <DashboardNavigation onNavigate={onNavigate} />
+        <DashboardNavigation pathname={pathname} onNavigate={onNavigate} />
       </div>
       <SetupCard setup={setupSummary} onNavigate={onNavigate} />
       <ResourceLinks onNavigate={onNavigate} />
@@ -485,35 +494,126 @@ export function DashboardShell({
   membershipSummaries,
   setupSummary,
 }: DashboardShellProps) {
+  const pathname = usePathname();
   const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const restoreFocusAfterCloseRef = useRef(false);
+  const previousPathnameRef = useRef(pathname);
 
-  const closeMobileNavigation = useCallback(() => {
+  const closeMobileNavigation = useCallback((restoreFocus: boolean) => {
+    restoreFocusAfterCloseRef.current = restoreFocus;
     setMobileNavigationOpen(false);
-    requestAnimationFrame(() => menuButtonRef.current?.focus());
   }, []);
+
+  const dismissMobileNavigation = useCallback(() => {
+    closeMobileNavigation(true);
+  }, [closeMobileNavigation]);
+
+  const closeMobileNavigationWithoutFocus = useCallback(() => {
+    closeMobileNavigation(false);
+  }, [closeMobileNavigation]);
+
+  const openMobileNavigation = useCallback(() => {
+    restoreFocusAfterCloseRef.current = false;
+    setMobileNavigationOpen(true);
+  }, []);
+
+  const handleDialogCancel = useCallback(
+    (event: SyntheticEvent<HTMLDialogElement>) => {
+      event.preventDefault();
+      dismissMobileNavigation();
+    },
+    [dismissMobileNavigation],
+  );
+
+  const handleDialogBackdropClick = useCallback(
+    (event: ReactMouseEvent<HTMLDialogElement>) => {
+      if (event.target === event.currentTarget) dismissMobileNavigation();
+    },
+    [dismissMobileNavigation],
+  );
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    if (mobileNavigationOpen) {
+      if (!dialog.open) dialog.showModal();
+      closeButtonRef.current?.focus();
+    } else if (dialog.open) {
+      dialog.close();
+    }
+  }, [mobileNavigationOpen]);
 
   useEffect(() => {
     if (!mobileNavigationOpen) return;
 
-    closeButtonRef.current?.focus();
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        closeMobileNavigation();
+    const previousDocumentOverflow =
+      document.documentElement.style.overflow;
+    const previousBodyOverflow = document.body.style.overflow;
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.documentElement.style.overflow = previousDocumentOverflow;
+      document.body.style.overflow = previousBodyOverflow;
+
+      const shouldRestoreFocus = restoreFocusAfterCloseRef.current;
+      restoreFocusAfterCloseRef.current = false;
+      if (shouldRestoreFocus) {
+        const closingPathname = pathname;
+        requestAnimationFrame(() => {
+          const desktopNavigationVisible = window.matchMedia(
+            "(min-width: 1024px)",
+          ).matches;
+          if (
+            !desktopNavigationVisible &&
+            previousPathnameRef.current === closingPathname
+          ) {
+            menuButtonRef.current?.focus();
+          }
+        });
       }
     };
+  }, [mobileNavigationOpen, pathname]);
 
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [closeMobileNavigation, mobileNavigationOpen]);
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(min-width: 1024px)");
+    const handleBreakpointChange = (event: MediaQueryListEvent) => {
+      if (event.matches) closeMobileNavigation(false);
+    };
+
+    if (mediaQuery.matches) closeMobileNavigation(false);
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", handleBreakpointChange);
+      return () =>
+        mediaQuery.removeEventListener("change", handleBreakpointChange);
+    }
+
+    mediaQuery.addListener(handleBreakpointChange);
+    return () => mediaQuery.removeListener(handleBreakpointChange);
+  }, [closeMobileNavigation]);
+
+  useEffect(() => {
+    if (previousPathnameRef.current !== pathname) {
+      previousPathnameRef.current = pathname;
+      closeMobileNavigation(false);
+    }
+  }, [closeMobileNavigation, pathname]);
+
+  const handleDialogClose = useCallback(() => {
+    setMobileNavigationOpen(false);
+  }, []);
 
   const sidebarProps = {
     userSummary,
     teamSummary,
     membershipSummaries,
     setupSummary,
+    pathname,
   };
 
   return (
@@ -527,7 +627,7 @@ export function DashboardShell({
 
       <div className="min-h-screen lg:flex">
         <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-line bg-surface lg:flex">
-          <SidebarContent {...sidebarProps} />
+          <SidebarContent key={`desktop-${pathname}`} {...sidebarProps} />
         </aside>
 
         <div className="min-w-0 flex-1">
@@ -542,7 +642,7 @@ export function DashboardShell({
               aria-label="Open navigation"
               aria-controls="mobile-dashboard-navigation"
               aria-expanded={mobileNavigationOpen}
-              onClick={() => setMobileNavigationOpen(true)}
+              onClick={openMobileNavigation}
               className="inline-flex min-h-10 items-center justify-center rounded-md border border-line px-3 text-sm font-medium text-fg transition-colors hover:bg-surface-2"
             >
               Menu
@@ -559,42 +659,38 @@ export function DashboardShell({
         </div>
       </div>
 
-      {mobileNavigationOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <button
-            type="button"
-            aria-label="Close navigation backdrop"
-            onClick={closeMobileNavigation}
-            className="absolute inset-0 bg-black/70"
-          />
-          <aside
-            id="mobile-dashboard-navigation"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Dashboard navigation"
-            className="absolute inset-y-0 left-0 z-10 flex w-[min(20rem,calc(100vw-3rem))] flex-col border-r border-line bg-surface shadow-[0_24px_80px_rgba(0,0,0,0.65)]"
-          >
-            <div className="flex min-h-14 items-center justify-between border-b border-line px-3">
-              <span className="text-sm font-medium">Navigation</span>
-              <button
-                ref={closeButtonRef}
-                type="button"
-                aria-label="Close navigation"
-                onClick={closeMobileNavigation}
-                className="flex h-10 w-10 items-center justify-center rounded-md text-xl leading-none text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg"
-              >
-                ×
-              </button>
-            </div>
-            <div className="min-h-0 flex-1">
-              <SidebarContent
-                {...sidebarProps}
-                onNavigate={closeMobileNavigation}
-              />
-            </div>
-          </aside>
+      <dialog
+        ref={dialogRef}
+        id="mobile-dashboard-navigation"
+        aria-modal="true"
+        aria-label="Dashboard navigation"
+        onCancel={handleDialogCancel}
+        onClose={handleDialogClose}
+        onClick={handleDialogBackdropClick}
+        className="fixed inset-y-0 left-0 m-0 h-dvh max-h-none w-[min(20rem,calc(100vw-3rem))] max-w-none overflow-hidden border-0 border-r border-line bg-surface p-0 text-fg shadow-[0_24px_80px_rgba(0,0,0,0.65)] backdrop:bg-black/70 lg:hidden"
+      >
+        <div className="flex h-full min-h-0 flex-col">
+          <div className="flex min-h-14 items-center justify-between border-b border-line px-3">
+            <span className="text-sm font-medium">Navigation</span>
+            <button
+              ref={closeButtonRef}
+              type="button"
+              aria-label="Close navigation"
+              onClick={dismissMobileNavigation}
+              className="flex h-10 w-10 items-center justify-center rounded-md text-xl leading-none text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg"
+            >
+              ×
+            </button>
+          </div>
+          <div className="min-h-0 flex-1">
+            <SidebarContent
+              key={`mobile-${pathname}`}
+              {...sidebarProps}
+              onNavigate={closeMobileNavigationWithoutFocus}
+            />
+          </div>
         </div>
-      )}
+      </dialog>
     </>
   );
 }
