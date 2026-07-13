@@ -61,9 +61,13 @@ export function PageHeader({
   children?: ReactNode;
 }) {
   return (
-    <div className="mb-6 flex items-center justify-between gap-4">
+    <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
       <h1 className="text-[22px] font-semibold tracking-tight">{title}</h1>
-      {children}
+      {children && (
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
+          {children}
+        </div>
+      )}
     </div>
   );
 }
@@ -112,10 +116,10 @@ export const inputCls =
   "w-full rounded-md border border-line bg-surface px-3 py-2 text-sm text-fg placeholder:text-fg-faint focus:border-lime";
 
 export const btnPrimary =
-  "inline-flex items-center gap-2 rounded-md bg-lime px-4 py-2 text-sm font-medium text-on-lime transition-colors hover:bg-lime-hover active:bg-lime-dim";
+  "inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-lime px-4 py-2 text-sm font-medium text-on-lime transition-colors hover:bg-lime-hover active:bg-lime-dim";
 
 export const btnSecondary =
-  "inline-flex items-center gap-2 rounded-md border border-line px-4 py-2 text-sm text-fg transition-colors hover:bg-surface-2";
+  "inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-line px-4 py-2 text-sm text-fg transition-colors hover:bg-surface-2";
 
 export const btnDanger =
   "inline-flex items-center gap-2 rounded-md border border-danger/40 px-3 py-1.5 text-xs text-danger transition-colors hover:bg-danger/10";

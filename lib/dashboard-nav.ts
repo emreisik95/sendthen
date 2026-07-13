@@ -37,7 +37,10 @@ function normalizeNavigationPath(path: string): string {
   return pathname.replace(/\/+$/, "") || "/";
 }
 
-export function isNavigationItemActive(pathname: string, href: string): boolean {
+export function isNavigationItemActive(
+  pathname: string,
+  href: DashboardNavigationItem["href"],
+): boolean {
   const normalizedPathname = normalizeNavigationPath(pathname);
   const normalizedHref = normalizeNavigationPath(href);
 
