@@ -47,12 +47,12 @@ const BUTTON_BASE =
 const BUTTON_PRIMARY = `${BUTTON_BASE} bg-lime text-on-lime shadow-[0_10px_34px_rgba(198,255,0,0.13)] hover:bg-lime-hover hover:text-on-lime hover:shadow-[0_14px_42px_rgba(198,255,0,0.2)]`;
 const BUTTON_SECONDARY = `${BUTTON_BASE} border-white/20 bg-white/[0.035] text-fg hover:border-lime/50 hover:bg-lime/[0.055]`;
 const KICKER =
-  "font-mono text-[0.72rem] font-semibold uppercase tracking-[0.12em] text-lime";
+  "font-mono text-[0.75rem] font-semibold uppercase tracking-[0.12em] text-lime";
 const SECTION_TITLE =
   "mt-3 max-w-[13ch] text-balance text-[clamp(2.25rem,5vw,4.35rem)] font-bold leading-[1.02] tracking-[-0.055em]";
 const SECTION_COPY = "text-base leading-7 text-[var(--landing-text-secondary)]";
 const CONSOLE_LABEL =
-  "flex items-center justify-between gap-3 px-4 py-3 font-mono text-[0.61rem] uppercase tracking-[0.12em] text-[var(--landing-text-tertiary)]";
+  "flex items-center justify-between gap-3 px-4 py-3 font-mono text-[0.75rem] uppercase tracking-[0.12em] text-[var(--landing-text-tertiary)]";
 const PROJECT_FACTS = ["MIT licensed", "One container", "SQLite-backed"] as const;
 const PRODUCT_SPANS = [
   "md:col-span-7",
@@ -112,7 +112,7 @@ export default function Landing() {
 
           <div className="ml-auto flex items-center gap-2 lg:ml-0">
             <Link
-              className="hidden min-h-11 items-center rounded-lg px-3 text-[0.82rem] font-medium text-[var(--landing-text-secondary)] no-underline transition-colors hover:text-fg sm:inline-flex"
+              className="inline-flex min-h-11 items-center rounded-lg px-2 text-[0.82rem] font-medium text-[var(--landing-text-secondary)] no-underline transition-colors hover:text-fg sm:px-3"
               href="/login"
             >
               Sign in
@@ -158,7 +158,7 @@ export default function Landing() {
               <ul className="landing-reveal mt-5 flex flex-wrap gap-2" aria-label="Project facts">
                 {PROJECT_FACTS.map((fact) => (
                   <li
-                    className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.025] px-2.5 py-1.5 font-mono text-[0.7rem] text-[var(--landing-text-secondary)]"
+                    className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.025] px-2.5 py-1.5 font-mono text-[0.75rem] text-[var(--landing-text-secondary)]"
                     key={fact}
                   >
                     <span className="size-1.5 shrink-0 rounded-full bg-lime shadow-[0_0_12px_rgba(198,255,0,0.55)]" aria-hidden />
@@ -169,7 +169,7 @@ export default function Landing() {
             </div>
 
             <figure className="landing-proof landing-reveal min-w-0 overflow-hidden rounded-3xl border border-white/15">
-              <figcaption className="flex min-h-12 items-center justify-between gap-3 border-b border-white/10 px-4 font-mono text-[0.68rem] text-[var(--landing-text-secondary)]">
+              <figcaption className="flex min-h-12 items-center justify-between gap-3 border-b border-white/10 px-4 font-mono text-[0.75rem] text-[var(--landing-text-secondary)]">
                 <span className="flex items-center gap-1.5" aria-hidden>
                   <i className="size-2 rounded-full bg-[var(--landing-text-tertiary)]" />
                   <i className="size-2 rounded-full bg-[var(--landing-text-tertiary)] opacity-60" />
@@ -181,15 +181,18 @@ export default function Landing() {
                 </span>
               </figcaption>
 
-              <div className="min-w-0 border-b border-white/10" aria-label="Example API request">
+              <section
+                className="min-w-0 border-b border-white/10"
+                aria-labelledby="api-request-label"
+              >
                 <div className={CONSOLE_LABEL}>
-                  <span>request.http</span>
+                  <span id="api-request-label">request.http</span>
                   <span>application/json</span>
                 </div>
-                <pre className="m-0 max-h-[18.25rem] max-w-full overflow-x-auto px-4 pb-5 font-mono text-[clamp(0.68rem,1.2vw,0.78rem)] leading-[1.72] text-[#dce3e8]">
+                <pre className="m-0 max-h-[18.25rem] max-w-full overflow-x-auto px-4 pb-5 font-mono text-[clamp(0.75rem,1.2vw,0.8rem)] leading-[1.72] text-[#dce3e8]">
                   <code>{API_REQUEST}</code>
                 </pre>
-              </div>
+              </section>
 
               <div className="px-4 pb-3">
                 <p className={CONSOLE_LABEL}>
@@ -202,14 +205,14 @@ export default function Landing() {
                       className="landing-pipeline-step relative grid min-w-0 grid-cols-[2rem_minmax(0,1fr)] items-start gap-3 py-2 max-sm:grid-cols-[1.75rem_minmax(0,1fr)]"
                       key={stage.key}
                     >
-                      <span className="relative z-10 inline-flex size-8 items-center justify-center rounded-lg border border-lime/35 bg-[#0d100c] font-mono text-[0.58rem] text-lime max-sm:size-7" aria-hidden>
+                      <span className="relative z-10 inline-flex size-8 items-center justify-center rounded-lg border border-lime/35 bg-[#0d100c] font-mono text-[0.75rem] text-lime max-sm:size-7" aria-hidden>
                         {String(index + 1).padStart(2, "0")}
                       </span>
                       <div className="min-w-0">
                         <strong className="block text-[0.78rem] font-semibold text-fg">
                           {stage.label}
                         </strong>
-                        <span className="block [overflow-wrap:anywhere] font-mono text-[0.66rem] leading-relaxed text-[var(--landing-text-tertiary)]">
+                        <span className="block [overflow-wrap:anywhere] font-mono text-[0.75rem] leading-relaxed text-[var(--landing-text-tertiary)]">
                           {stage.detail}
                         </span>
                       </div>
@@ -219,10 +222,10 @@ export default function Landing() {
               </div>
 
               <div className="flex items-center justify-between gap-4 border-t border-lime/20 bg-lime/[0.055] px-4 py-3 max-md:flex-col max-md:items-start max-md:gap-1">
-                <span className="font-mono text-[0.62rem] uppercase tracking-[0.1em] text-[var(--landing-text-tertiary)]">
+                <span className="font-mono text-[0.75rem] uppercase tracking-[0.1em] text-[var(--landing-text-tertiary)]">
                   example SMTP outcome
                 </span>
-                <strong className="text-end font-mono text-[0.69rem] font-semibold text-lime max-md:text-start">
+                <strong className="text-end font-mono text-[0.75rem] font-semibold text-lime max-md:text-start">
                   <span aria-hidden>250 · </span>accepted by receiving server
                 </strong>
               </div>
@@ -249,7 +252,7 @@ export default function Landing() {
             <div className="mt-[clamp(2.5rem,5vw,4.5rem)] grid divide-y divide-white/10 border-y border-white/10 md:grid-cols-3 md:divide-x md:divide-y-0">
               {outcomePillars.map((pillar, index) => (
                 <article className="min-w-0 p-[clamp(1.6rem,3vw,2.5rem)]" key={pillar.key}>
-                  <p className="font-mono text-[0.64rem] font-semibold uppercase tracking-[0.12em] text-[var(--landing-text-tertiary)]" aria-hidden>
+                  <p className="font-mono text-[0.75rem] font-semibold uppercase tracking-[0.12em] text-[var(--landing-text-tertiary)]" aria-hidden>
                     0{index + 1}
                   </p>
                   <h3 className="mt-6 text-[clamp(1.2rem,2vw,1.55rem)] font-semibold leading-tight tracking-[-0.025em]">
@@ -291,7 +294,7 @@ export default function Landing() {
                   key={group.key}
                 >
                   <div className="flex items-center justify-between gap-4">
-                    <p className="font-mono text-[0.64rem] font-semibold uppercase tracking-[0.12em] text-[var(--landing-text-tertiary)]">
+                    <p className="font-mono text-[0.75rem] font-semibold uppercase tracking-[0.12em] text-[var(--landing-text-tertiary)]">
                       Surface 0{index + 1}
                     </p>
                     <span className="font-mono text-lg text-lime" aria-hidden>
@@ -387,7 +390,7 @@ export default function Landing() {
             </div>
 
             <div className="mt-8" aria-labelledby="sources-heading">
-              <h3 id="sources-heading" className="font-mono text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-[var(--landing-text-secondary)]">
+              <h3 id="sources-heading" className="font-mono text-[0.75rem] font-semibold uppercase tracking-[0.12em] text-[var(--landing-text-secondary)]">
                 Official sources
               </h3>
               <div className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(min(100%,12rem),1fr))] gap-3">
@@ -397,7 +400,7 @@ export default function Landing() {
                     <ul className="mt-2 space-y-2">
                       {product.sources.map((source) => (
                         <li key={source.url}>
-                          <a className="inline-block [overflow-wrap:anywhere] text-[0.72rem] leading-normal text-[var(--landing-text-secondary)] underline-offset-4 hover:text-lime" href={source.url} target="_blank" rel="noopener noreferrer">
+                          <a className="inline-block [overflow-wrap:anywhere] text-[0.75rem] leading-normal text-[var(--landing-text-secondary)] underline decoration-white/35 underline-offset-4 hover:text-lime" href={source.url} target="_blank" rel="noopener noreferrer">
                             {source.label}
                             <span aria-hidden> ↗</span>
                             <span className="sr-only"> (opens in a new tab)</span>
@@ -432,11 +435,11 @@ export default function Landing() {
                   <span>terminal</span>
                   <span>quickstart</span>
                 </div>
-                <pre className="m-0 max-w-full overflow-x-auto p-[clamp(1.25rem,3vw,2rem)] font-mono text-[clamp(0.72rem,1.3vw,0.83rem)] leading-[1.72] text-lime">
+                <pre className="m-0 max-w-full overflow-x-auto p-[clamp(1.25rem,3vw,2rem)] font-mono text-[clamp(0.75rem,1.3vw,0.83rem)] leading-[1.72] text-lime">
                   <code>{quickstartLines.join("\n")}</code>
                 </pre>
                 <aside className="border-t border-white/10 bg-white/[0.025] px-[clamp(1.25rem,3vw,2rem)] py-4" aria-label="Operations note">
-                  <strong className="font-mono text-[0.66rem] uppercase tracking-[0.1em] text-fg">
+                  <strong className="font-mono text-[0.75rem] uppercase tracking-[0.1em] text-fg">
                     Operations note
                   </strong>
                   <p className="mt-2 text-[0.78rem] leading-relaxed text-[var(--landing-text-secondary)]">
@@ -448,7 +451,7 @@ export default function Landing() {
 
             <div className="mt-[clamp(3rem,7vw,6rem)] grid min-w-0 gap-4 md:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)]">
               <article className="landing-choice-primary min-w-0 rounded-[1.125rem] border border-lime/35 p-[clamp(1.5rem,4vw,2.5rem)]">
-                <p className="font-mono text-[0.64rem] font-semibold uppercase tracking-[0.12em] text-[var(--landing-text-tertiary)]">
+                <p className="font-mono text-[0.75rem] font-semibold uppercase tracking-[0.12em] text-[var(--landing-text-tertiary)]">
                   Choice 01 · primary
                 </p>
                 <h3 className="mt-6 text-[clamp(1.2rem,2vw,1.55rem)] font-semibold leading-tight tracking-[-0.025em]">
@@ -465,7 +468,7 @@ export default function Landing() {
               </article>
 
               <article className="min-w-0 rounded-[1.125rem] border border-white/10 bg-white/[0.025] p-[clamp(1.5rem,4vw,2.5rem)]">
-                <p className="font-mono text-[0.64rem] font-semibold uppercase tracking-[0.12em] text-[var(--landing-text-tertiary)]">
+                <p className="font-mono text-[0.75rem] font-semibold uppercase tracking-[0.12em] text-[var(--landing-text-tertiary)]">
                   Choice 02 · secondary
                 </p>
                 <h3 className="mt-6 text-[clamp(1.2rem,2vw,1.55rem)] font-semibold leading-tight tracking-[-0.025em]">
@@ -511,7 +514,7 @@ export default function Landing() {
       <footer className="border-t border-hairline">
         <div className="landing-container flex min-h-28 flex-col items-start justify-center gap-5 py-6 text-[0.76rem] text-[var(--landing-text-tertiary)] md:flex-row md:items-center md:justify-between md:gap-8">
           <p className="flex flex-wrap items-center gap-3">
-            <span className="inline-flex items-center font-mono text-[0.9rem] font-semibold tracking-[-0.04em] text-fg" aria-label="sendthen">
+            <span className="inline-flex items-center font-mono text-[0.9rem] font-semibold tracking-[-0.04em] text-fg">
               send<span className="text-lime">then</span>
             </span>
             <span>MIT-licensed email control plane.</span>

@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   comparisonCaveat,
@@ -33,6 +34,40 @@ const officialProductHosts = {
   mailgun: ["mailgun.com"],
 } as const;
 
+const userFacingMarketingContent = {
+  landingCtaPaths,
+  socialPreviewImage,
+  primaryNavigation,
+  proofStages,
+  quickstartLines,
+  operationsNote,
+  landingCopy,
+  outcomePillars,
+  featureGroups,
+  comparisonDate,
+  comparisonProducts,
+  comparisonRows,
+  comparisonCaveat,
+  comparisonMethodology,
+};
+
+const userFacingSourceFiles = [
+  {
+    path: "app/page.tsx",
+    source: readFileSync(
+      new URL("../app/page.tsx", import.meta.url),
+      "utf8",
+    ),
+  },
+  {
+    path: "app/layout.tsx",
+    source: readFileSync(
+      new URL("../app/layout.tsx", import.meta.url),
+      "utf8",
+    ),
+  },
+] as const;
+
 function isSameOrSubdomain(hostname: string, rootHost: string): boolean {
   return hostname === rootHost || hostname.endsWith(`.${rootHost}`);
 }
@@ -57,18 +92,15 @@ describe("landing marketing model", () => {
   it("does not ship rejected claims", () => {
     expect(forbiddenMarketingClaims).toEqual(requiredForbiddenClaims);
 
-    const serialized = JSON.stringify({
-      landingCtaPaths,
-      landingCopy,
-      outcomePillars,
-      featureGroups,
-      comparisonProducts,
-      comparisonRows,
-      comparisonCaveat,
-    }).toLowerCase();
+    const serialized = JSON.stringify(userFacingMarketingContent).toLowerCase();
 
     for (const claim of requiredForbiddenClaims) {
       expect(serialized).not.toContain(claim);
+      for (const { path, source } of userFacingSourceFiles) {
+        expect(source.toLowerCase(), `${path} contains ${claim}`).not.toContain(
+          claim,
+        );
+      }
     }
   });
 
