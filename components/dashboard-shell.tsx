@@ -322,7 +322,7 @@ function SetupCard({
           <button
             type="submit"
             aria-label="Dismiss setup card"
-            className="flex h-8 w-8 items-center justify-center rounded-md text-lg leading-none text-fg-faint transition-colors hover:bg-surface-3 hover:text-fg"
+            className="flex h-10 w-10 items-center justify-center rounded-md text-lg leading-none text-fg-faint transition-colors hover:bg-surface-3 hover:text-fg"
           >
             ×
           </button>

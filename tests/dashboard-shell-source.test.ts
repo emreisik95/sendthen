@@ -158,6 +158,21 @@ describe("dashboard shell source invariants", () => {
     expect(shellSource).toContain('name="to" value="/overview"');
   });
 
+  it("keeps the setup dismiss target at least forty pixels square", () => {
+    const dismissButton = shellSource.match(
+      /aria-label="Dismiss setup card"[\s\S]*?className="([^"]+)"/,
+    );
+
+    expect(dismissButton, "missing setup dismiss control").not.toBeNull();
+    const classes = dismissButton?.[1]?.split(/\s+/) ?? [];
+    expect(classes.some((name) => name === "h-10" || name === "min-h-10")).toBe(
+      true,
+    );
+    expect(classes.some((name) => name === "w-10" || name === "min-w-10")).toBe(
+      true,
+    );
+  });
+
   it("does not add broad transitions to the dashboard shell", () => {
     expect(shellSource).not.toContain("transition-all");
   });
@@ -205,8 +220,8 @@ describe("responsive shared UI source invariants", () => {
     expect(uiSource).toMatch(/flex[^"]*flex-wrap[^"]*sm:w-auto/);
   });
 
-  it("keeps primary and secondary controls at least forty pixels tall", () => {
-    for (const name of ["btnPrimary", "btnSecondary"]) {
+  it("keeps shared button controls at least forty pixels tall", () => {
+    for (const name of ["btnPrimary", "btnSecondary", "btnDanger"]) {
       const classes = uiSource.match(
         new RegExp(`export const ${name}\\s*=\\s*\\n?\\s*"([^"]+)"`),
       );

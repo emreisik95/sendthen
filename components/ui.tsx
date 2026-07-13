@@ -122,7 +122,7 @@ export const btnSecondary =
   "inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-line px-4 py-2 text-sm text-fg transition-colors hover:bg-surface-2";
 
 export const btnDanger =
-  "inline-flex items-center gap-2 rounded-md border border-danger/40 px-3 py-1.5 text-xs text-danger transition-colors hover:bg-danger/10";
+  "inline-flex min-h-10 items-center gap-2 rounded-md border border-danger/40 px-3 py-1.5 text-xs text-danger transition-colors hover:bg-danger/10";
 
 export function fmtDate(d: Date | null | undefined): string {
   if (!d) return "—";
