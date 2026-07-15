@@ -44,7 +44,7 @@ function SkipTour() {
       <button
         name="to"
         value="/emails"
-        className="text-sm text-fg-faint transition-colors hover:text-fg"
+        className="inline-flex min-h-10 items-center text-sm text-fg-muted transition-colors hover:text-fg"
       >
         Skip tour →
       </button>
@@ -63,44 +63,82 @@ function Rail({
 }) {
   const href = (step: StepKey) =>
     `/onboarding?step=${step}${token ? `&token=${encodeURIComponent(token)}` : ""}`;
+  const completedSteps = STEPS.filter((step) => done[step.key]).length;
+  const completion = Math.round((completedSteps / STEPS.length) * 100);
+
   return (
-    <nav aria-label="Setup steps" className="mb-10">
-      <ol className="flex items-center gap-2">
+    <nav
+      aria-label="Setup journey"
+      className="rounded-xl border border-line bg-surface p-4 lg:sticky lg:top-8 lg:self-start"
+    >
+      <div className="flex items-start justify-between gap-4 lg:block">
+        <div>
+          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-lime">
+            Getting started
+          </p>
+          <h2
+            id="setup-journey-heading"
+            className="mt-1.5 text-sm font-medium text-fg"
+          >
+            Setup journey
+          </h2>
+        </div>
+        <span className="font-mono text-xs text-fg-muted lg:mt-3 lg:block">
+          {completedSteps}/{STEPS.length} complete
+        </span>
+      </div>
+
+      <div
+        role="progressbar"
+        aria-label="Setup completion"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={completion}
+        className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-3"
+      >
+        <div
+          className="h-full rounded-full bg-lime"
+          style={{ width: `${completion}%` }}
+        />
+      </div>
+
+      <ol className="mt-4 grid grid-cols-4 gap-1.5 lg:block lg:space-y-1">
         {STEPS.map((s, i) => {
           const isCurrent = s.key === current;
           const isDone = done[s.key];
           return (
-            <li key={s.key} className="flex items-center gap-2">
-              {i > 0 && (
-                <span aria-hidden className="h-px w-6 bg-line sm:w-10" />
-              )}
+            <li key={s.key}>
               <Link
                 href={href(s.key)}
-                className={`group flex items-center gap-2 text-sm transition-colors ${
+                className={`group flex min-h-12 flex-col items-center justify-center gap-1 rounded-lg px-1.5 py-2 text-center text-[11px] transition-colors lg:flex-row lg:justify-start lg:gap-3 lg:px-3 lg:text-left lg:text-xs ${
                   isCurrent
-                    ? "text-lime"
+                    ? "bg-lime/10 text-lime"
                     : isDone
-                      ? "text-fg hover:text-lime"
-                      : "text-fg-faint hover:text-fg"
+                      ? "text-fg hover:bg-surface-2 hover:text-lime"
+                      : "text-fg-muted hover:bg-surface-2 hover:text-fg"
                 }`}
                 aria-current={isCurrent ? "step" : undefined}
               >
                 {isDone ? (
                   <span
                     aria-hidden
-                    className="flex h-4 w-4 items-center justify-center rounded-full bg-lime text-[10px] font-bold text-on-lime"
+                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-lime text-[10px] font-bold text-on-lime"
                   >
                     ✓
                   </span>
                 ) : (
                   <span
                     aria-hidden
-                    className={`h-4 w-4 rounded-full border ${
-                      isCurrent ? "border-lime" : "border-line"
+                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border font-mono text-[9px] ${
+                      isCurrent
+                        ? "border-lime text-lime"
+                        : "border-line text-fg-faint"
                     }`}
-                  />
+                  >
+                    {i + 1}
+                  </span>
                 )}
-                {s.label}
+                <span className="truncate">{s.label}</span>
               </Link>
             </li>
           );
@@ -229,7 +267,10 @@ function DomainStep({
               That domain is already registered to another team.
             </p>
           )}
-          <form action={onboardingCreateDomainAction} className="flex gap-2">
+          <form
+            action={onboardingCreateDomainAction}
+            className="flex flex-col gap-2 sm:flex-row"
+          >
             <input
               name="name"
               type="text"
@@ -367,7 +408,10 @@ function KeyStep({ hasApiKey }: { hasApiKey: boolean }) {
         </Card>
       ) : (
         <Card className="p-5">
-          <form action={onboardingCreateKeyAction} className="flex gap-2">
+          <form
+            action={onboardingCreateKeyAction}
+            className="flex flex-col gap-2 sm:flex-row"
+          >
             <input
               name="name"
               type="text"
@@ -526,8 +570,8 @@ export default async function OnboardingPage({
 
   return (
     <main className="min-h-screen bg-bg">
-      <div className="mx-auto w-full max-w-2xl px-4 py-6">
-        <div className="mb-10 flex items-center justify-between">
+      <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:py-8">
+        <div className="mb-8 flex items-center justify-between">
           <Link
             href="/"
             className="font-mono text-lg font-medium tracking-tight"
@@ -537,26 +581,30 @@ export default async function OnboardingPage({
           <SkipTour />
         </div>
 
-        <Rail current={current} done={done} token={token} />
+        <div className="grid gap-6 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-10">
+          <Rail current={current} done={done} token={token} />
 
-        {current === "welcome" && <WelcomeStep sandbox={sandbox} />}
-        {current === "domain" && (
-          <DomainStep
-            domain={domain}
-            verified={progress.domainVerified}
-            error={error}
-          />
-        )}
-        {current === "key" && <KeyStep hasApiKey={progress.hasApiKey} />}
-        {current === "send" && (
-          <SendStep
-            token={token}
-            fromAddr={fromAddr}
-            toAddr={user.email}
-            base={base}
-            sandbox={sandbox}
-          />
-        )}
+          <div className="min-w-0 rounded-xl border border-line bg-surface p-5 sm:p-7 lg:p-8">
+            {current === "welcome" && <WelcomeStep sandbox={sandbox} />}
+            {current === "domain" && (
+              <DomainStep
+                domain={domain}
+                verified={progress.domainVerified}
+                error={error}
+              />
+            )}
+            {current === "key" && <KeyStep hasApiKey={progress.hasApiKey} />}
+            {current === "send" && (
+              <SendStep
+                token={token}
+                fromAddr={fromAddr}
+                toAddr={user.email}
+                base={base}
+                sandbox={sandbox}
+              />
+            )}
+          </div>
+        </div>
       </div>
     </main>
   );

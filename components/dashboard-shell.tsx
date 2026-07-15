@@ -311,13 +311,18 @@ function SetupCard({
   if (setupSteps.every((step) => step.complete)) return null;
 
   const completedSteps = setupSteps.filter((step) => step.complete).length;
+  const nextSetupStep = setupSteps.find((step) => !step.complete);
+  if (!nextSetupStep) return null;
+  const setupProgress = Math.round(
+    (completedSteps / setupSteps.length) * 100,
+  );
 
   return (
-    <div className="mx-3 my-2 rounded-lg border border-line bg-surface-2 p-3">
-      <div className="mb-2 flex items-start justify-between gap-2">
+    <div className="mx-3 my-2 rounded-lg border border-warn/20 bg-surface-2 p-3">
+      <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="text-xs font-medium text-fg">Finish setup</p>
-          <p className="font-mono text-xs text-fg-muted">
+          <p className="text-xs font-medium text-fg">Launch workspace</p>
+          <p className="mt-0.5 font-mono text-[10px] uppercase tracking-wider text-fg-muted">
             {completedSteps}/3 complete
           </p>
         </div>
@@ -332,32 +337,33 @@ function SetupCard({
           </button>
         </form>
       </div>
-      <ul className="space-y-1.5">
-        {setupSteps.map((step) => (
-          <li
-            key={step.label}
-            className={`flex items-center gap-2 text-xs ${
-              step.complete ? "text-fg-muted" : "text-fg"
-            }`}
-          >
-            <span
-              aria-hidden="true"
-              className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border text-xs ${
-                step.complete
-                  ? "border-lime bg-lime text-on-lime"
-                  : "border-line text-transparent"
-              }`}
-            >
-              ✓
-            </span>
-            {step.label}
-          </li>
-        ))}
-      </ul>
+
+      <div
+        role="progressbar"
+        aria-label="Setup progress"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={setupProgress}
+        className="mt-2.5 h-1 overflow-hidden rounded-full bg-surface-3"
+      >
+        <div
+          className="h-full rounded-full bg-warn"
+          style={{ width: `${setupProgress}%` }}
+        />
+      </div>
+
+      <div className="mt-3 rounded-md border border-line bg-bg/45 px-3 py-2.5">
+        <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-warn">
+          Up next
+        </p>
+        <p className="mt-1 truncate text-xs font-medium text-fg">
+          {nextSetupStep.label}
+        </p>
+      </div>
       <Link
         href="/onboarding"
         onClick={onNavigate}
-        className="mt-3 flex min-h-10 items-center justify-center rounded-md bg-lime px-3 py-2 text-xs font-medium text-on-lime transition-colors hover:bg-lime-hover"
+        className="mt-2 flex min-h-10 items-center justify-center rounded-md bg-lime px-3 py-2 text-xs font-medium text-on-lime transition-colors hover:bg-lime-hover"
       >
         Continue setup
       </Link>

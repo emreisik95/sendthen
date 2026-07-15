@@ -16,6 +16,7 @@ const lifecycleSource = `${shellSource}\n${hookSource}`;
 const layoutSource = readSource("app/(dash)/layout.tsx");
 const uiSource = readSource("components/ui.tsx");
 const navigationSource = readSource("lib/dashboard-nav.ts");
+const onboardingSource = readSource("app/onboarding/page.tsx");
 
 describe("dashboard shell source invariants", () => {
   it("keeps interactivity in a dedicated client boundary with serializable summaries", () => {
@@ -292,6 +293,16 @@ describe("dashboard shell source invariants", () => {
     );
   });
 
+  it("turns setup into a compact progress dock with one next step", () => {
+    expect(shellSource).toContain(
+      "const nextSetupStep = setupSteps.find((step) => !step.complete)",
+    );
+    expect(shellSource).toContain('role="progressbar"');
+    expect(shellSource).toContain('aria-label="Setup progress"');
+    expect(shellSource).toContain("{nextSetupStep.label}");
+    expect(shellSource).toContain("Up next");
+  });
+
   it("does not add broad transitions to the dashboard shell", () => {
     expect(shellSource).not.toContain("transition-all");
   });
@@ -303,6 +314,25 @@ describe("dashboard shell source invariants", () => {
       ) ?? [];
 
     expect(invalidLabels).toEqual([]);
+  });
+});
+
+describe("onboarding journey source invariants", () => {
+  it("keeps setup context beside the active step on wide screens", () => {
+    expect(onboardingSource).toContain('aria-label="Setup journey"');
+    expect(onboardingSource).toContain('id="setup-journey-heading"');
+    expect(onboardingSource).toContain(
+      "lg:grid-cols-[15rem_minmax(0,1fr)]",
+    );
+    expect(onboardingSource).toContain(
+      'aria-current={isCurrent ? "step" : undefined}',
+    );
+  });
+
+  it("shows real setup completion in a labelled progress meter", () => {
+    expect(onboardingSource).toContain('aria-label="Setup completion"');
+    expect(onboardingSource).toContain('role="progressbar"');
+    expect(onboardingSource).toContain("completedSteps");
   });
 });
 
