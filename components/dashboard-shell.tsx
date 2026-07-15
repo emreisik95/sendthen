@@ -16,6 +16,7 @@ import {
   switchTeamAction,
 } from "@/app/actions";
 import {
+  adminNavigation,
   campaignCompanionNavigation,
   configurationNavigation,
   isConfigurationNavigationActive,
@@ -37,6 +38,7 @@ import {
   IconMail,
   IconMetrics,
   IconSettings,
+  IconShield,
   IconTeam,
   IconTemplate,
   IconUser,
@@ -71,7 +73,8 @@ type NavigationIcon = ComponentType<SVGProps<SVGSVGElement>>;
 type NavigationKey =
   | (typeof primaryNavigation)[number]["key"]
   | (typeof configurationNavigation)[number]["key"]
-  | (typeof campaignCompanionNavigation)[number]["key"];
+  | (typeof campaignCompanionNavigation)[number]["key"]
+  | (typeof adminNavigation)[number]["key"];
 
 const navigationIcons: Record<NavigationKey, NavigationIcon> = {
   home: IconChart,
@@ -85,6 +88,7 @@ const navigationIcons: Record<NavigationKey, NavigationIcon> = {
   webhooks: IconWebhook,
   blockedRecipients: IconBan,
   deliveryAndTracking: IconSettings,
+  admin: IconShield,
 };
 
 function DashboardLink({
@@ -131,9 +135,11 @@ function DashboardLink({
 function DashboardNavigation({
   pathname,
   onNavigate,
+  isAdmin,
 }: {
   pathname: string;
   onNavigate?: () => void;
+  isAdmin: boolean;
 }) {
   const configurationNavigationId = useId();
   const configurationActive = isConfigurationNavigationActive(pathname);
@@ -218,6 +224,26 @@ function DashboardNavigation({
           </div>
         )}
       </div>
+
+      {isAdmin && (
+        <div
+          role="group"
+          aria-label="Instance administration"
+          className="border-t border-line pt-3"
+        >
+          <p className="mb-1 px-3 font-mono text-[9px] uppercase tracking-[0.16em] text-fg-faint">
+            Instance
+          </p>
+          {adminNavigation.map((item) => (
+            <DashboardLink
+              key={item.key}
+              item={item}
+              pathname={pathname}
+              onNavigate={onNavigate}
+            />
+          ))}
+        </div>
+      )}
     </nav>
   );
 }
@@ -484,7 +510,11 @@ function SidebarContent({
         onNavigate={onNavigate}
       />
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-        <DashboardNavigation pathname={pathname} onNavigate={onNavigate} />
+        <DashboardNavigation
+          pathname={pathname}
+          onNavigate={onNavigate}
+          isAdmin={userSummary.role === "admin"}
+        />
       </div>
       <SetupCard setup={setupSummary} onNavigate={onNavigate} />
       <ResourceLinks onNavigate={onNavigate} />

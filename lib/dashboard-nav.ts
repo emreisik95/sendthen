@@ -32,6 +32,10 @@ export const campaignCompanionNavigation = [
   { key: "contacts", label: "Contacts", href: "/audiences" },
 ] as const satisfies readonly DashboardNavigationItem[];
 
+export const adminNavigation = [
+  { key: "admin", label: "Admin", href: "/admin" },
+] as const satisfies readonly DashboardNavigationItem[];
+
 function normalizeNavigationPath(path: string): string {
   const [pathname = ""] = path.split(/[?#]/);
   return pathname.replace(/\/+$/, "") || "/";

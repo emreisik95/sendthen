@@ -51,6 +51,15 @@ describe("dashboard shell source invariants", () => {
     expect(shellSource).toContain('aria-current={active ? "page" : undefined}');
   });
 
+  it("shows the instance administration model only to admins", () => {
+    expect(navigationSource).toContain("adminNavigation");
+    expect(shellSource).toContain("adminNavigation");
+    expect(shellSource).toContain("adminNavigation.map");
+    expect(shellSource).toMatch(/userSummary\.role\s*===\s*["']admin["']/);
+    expect(shellSource).toContain('aria-label="Instance administration"');
+    expect(shellSource).toContain("IconShield");
+  });
+
   it("drives the Configure disclosure from the shared active helper while allowing toggles", () => {
     expect(shellSource).toContain(
       "isConfigurationNavigationActive(pathname)",

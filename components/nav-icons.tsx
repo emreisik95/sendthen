@@ -154,6 +154,13 @@ export const IconUser = (p: SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
+export const IconShield = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}>
+    <path d="M12 3 20 6v5c0 5.1-3.4 8.6-8 10-4.6-1.4-8-4.9-8-10V6z" />
+    <path className="i-draw" d="m9 12 2 2 4-5" />
+  </svg>
+);
+
 export const IconLogout = (p: SVGProps<SVGSVGElement>) => (
   <svg {...base(p)}>
     <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4" />

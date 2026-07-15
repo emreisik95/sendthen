@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  adminNavigation,
   campaignCompanionNavigation,
   configurationNavigation,
   isConfigurationNavigationActive,
@@ -45,6 +46,21 @@ describe("dashboard navigation model", () => {
     );
   });
 
+  it("defines the instance administration route separately", () => {
+    expect(adminNavigation).toEqual([
+      { key: "admin", label: "Admin", href: "/admin" },
+    ]);
+    expect(isNavigationItemActive("/admin", adminNavigation[0].href)).toBe(
+      true,
+    );
+    expect(
+      isNavigationItemActive("/admin/users", adminNavigation[0].href),
+    ).toBe(true);
+    expect(
+      isNavigationItemActive("/administrator", adminNavigation[0].href),
+    ).toBe(false);
+  });
+
   it("excludes account-only routes from primary and configuration navigation", () => {
     const navigationHrefs = [
       ...primaryNavigation,
@@ -61,6 +77,7 @@ describe("dashboard navigation model", () => {
       ...primaryNavigation,
       ...configurationNavigation,
       ...campaignCompanionNavigation,
+      ...adminNavigation,
     ];
 
     for (const item of navigation) {
