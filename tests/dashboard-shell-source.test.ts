@@ -271,7 +271,8 @@ describe("dashboard shell source invariants", () => {
     expect(shellSource).not.toContain("setup.hasDomain");
     expect(shellSource).not.toContain("setup.stepsDone");
     expect(shellSource).toMatch(/setupSteps\.every\(/);
-    expect(shellSource).toContain("Verified domain");
+    expect(shellSource).toContain("Add and verify domain");
+    expect(shellSource).not.toContain('label: "Verified domain"');
     expect(shellSource).toContain("API key");
     expect(shellSource).toContain("First sent email");
     expect(shellSource).toContain("Continue setup");

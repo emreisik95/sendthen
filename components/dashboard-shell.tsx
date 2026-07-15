@@ -304,7 +304,7 @@ function SetupCard({
   if (!setup) return null;
 
   const setupSteps = [
-    { label: "Verified domain", complete: setup.domainVerified },
+    { label: "Add and verify domain", complete: setup.domainVerified },
     { label: "API key", complete: setup.hasApiKey },
     { label: "First sent email", complete: setup.hasSentEmail },
   ];
