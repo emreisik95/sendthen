@@ -1,4 +1,4 @@
-import { asc, desc, eq } from "drizzle-orm";
+import { asc, count, desc, eq } from "drizzle-orm";
 import {
   db,
   domains,
@@ -153,4 +153,52 @@ export async function loadAdminDashboard(
     },
     users: userSummaries.filter((user) => matchesSearch(user, query)),
   };
+}
+
+export interface ChangeUserRoleResult {
+  userId: string;
+  role: User["role"];
+  changed: boolean;
+}
+
+export async function changeUserRole(
+  actorId: string,
+  targetId: string,
+  requestedRole: string,
+): Promise<ChangeUserRoleResult> {
+  return db.transaction((tx) => {
+    const actor = tx.select().from(users).where(eq(users.id, actorId)).get();
+    if (!actor || actor.role !== "admin") {
+      throw new AdminOperationError("forbidden");
+    }
+    if (requestedRole !== "admin" && requestedRole !== "member") {
+      throw new AdminOperationError("invalid_role");
+    }
+
+    const target = tx.select().from(users).where(eq(users.id, targetId)).get();
+    if (!target) throw new AdminOperationError("not_found");
+    if (target.id === actor.id) {
+      throw new AdminOperationError("self_management");
+    }
+    if (target.role === requestedRole) {
+      return { userId: target.id, role: requestedRole, changed: false };
+    }
+
+    if (target.role === "admin" && requestedRole === "member") {
+      const adminCount = tx
+        .select({ value: count() })
+        .from(users)
+        .where(eq(users.role, "admin"))
+        .get();
+      if (!adminCount || adminCount.value <= 1) {
+        throw new AdminOperationError("final_admin");
+      }
+    }
+
+    tx.update(users)
+      .set({ role: requestedRole })
+      .where(eq(users.id, target.id))
+      .run();
+    return { userId: target.id, role: requestedRole, changed: true };
+  });
 }

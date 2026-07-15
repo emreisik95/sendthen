@@ -11,7 +11,11 @@ import {
 import { registerUser } from "@/lib/auth-user";
 import { createTeam } from "@/lib/team";
 import { newDomainId, newMemberId } from "@/lib/id";
-import { AdminOperationError, loadAdminDashboard } from "@/lib/admin";
+import {
+  AdminOperationError,
+  changeUserRole,
+  loadAdminDashboard,
+} from "@/lib/admin";
 
 let admin: User;
 let member: User;
@@ -175,5 +179,79 @@ describe("admin dashboard data", () => {
     const error = new AdminOperationError("forbidden");
     expect(error).toBeInstanceOf(Error);
     expect(error.code).toBe("forbidden");
+  });
+});
+
+describe("admin role management", () => {
+  it("rejects role changes from a non-admin actor", async () => {
+    await expect(
+      changeUserRole(member.id, secondMember.id, "admin"),
+    ).rejects.toMatchObject({ code: "forbidden" });
+  });
+
+  it("rejects an invalid role without changing the target", async () => {
+    await expect(
+      changeUserRole(admin.id, member.id, "owner"),
+    ).rejects.toMatchObject({ code: "invalid_role" });
+    const [target] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, member.id));
+    expect(target.role).toBe("member");
+  });
+
+  it("rejects an unknown target", async () => {
+    await expect(
+      changeUserRole(admin.id, "usr_missing", "admin"),
+    ).rejects.toMatchObject({ code: "not_found" });
+  });
+
+  it("rejects changing the current administrator's own role", async () => {
+    await expect(
+      changeUserRole(admin.id, admin.id, "member"),
+    ).rejects.toMatchObject({ code: "self_management" });
+    const [actor] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, admin.id));
+    expect(actor.role).toBe("admin");
+  });
+
+  it("promotes and demotes another user", async () => {
+    await expect(
+      changeUserRole(admin.id, secondMember.id, "admin"),
+    ).resolves.toEqual({
+      userId: secondMember.id,
+      role: "admin",
+      changed: true,
+    });
+    let [target] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, secondMember.id));
+    expect(target.role).toBe("admin");
+
+    await expect(
+      changeUserRole(admin.id, secondMember.id, "member"),
+    ).resolves.toEqual({
+      userId: secondMember.id,
+      role: "member",
+      changed: true,
+    });
+    [target] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, secondMember.id));
+    expect(target.role).toBe("member");
+  });
+
+  it("reports a no-op when the requested role is already assigned", async () => {
+    await expect(
+      changeUserRole(admin.id, member.id, "member"),
+    ).resolves.toEqual({
+      userId: member.id,
+      role: "member",
+      changed: false,
+    });
   });
 });
