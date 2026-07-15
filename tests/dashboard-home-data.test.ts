@@ -149,12 +149,20 @@ describe("dashboard Home data", () => {
         createdAt: now,
       },
     ]);
-    await db.insert(emailEvents).values({
-      id: newEventId(),
-      emailId: otherEmailId,
-      type: "email.opened",
-      createdAt: now,
-    });
+    await db.insert(emailEvents).values([
+      {
+        id: newEventId(),
+        emailId,
+        type: "email.opened",
+        createdAt: now,
+      },
+      {
+        id: newEventId(),
+        emailId: otherEmailId,
+        type: "email.opened",
+        createdAt: now,
+      },
+    ]);
     await db.insert(webhooks).values([
       {
         id: newWebhookId(),
@@ -228,7 +236,16 @@ describe("dashboard Home data", () => {
       "Requested team email",
     ]);
     expect(result.statusRows).toEqual([{ status: "delivered", count: 1 }]);
-    expect(result.openedCount).toBe(0);
+    const day = [
+      now.getFullYear(),
+      String(now.getMonth() + 1).padStart(2, "0"),
+      String(now.getDate()).padStart(2, "0"),
+    ].join("-");
+    expect(result.dailyStatusRows).toEqual([
+      { day, status: "delivered", count: 1 },
+    ]);
+    expect(result.dailyOpenRows).toEqual([{ day, count: 1 }]);
+    expect(result.openedCount).toBe(1);
     expect(result.webhookCount).toBe(1);
     expect(result.audienceCount).toBe(1);
     expect(result.campaignCount).toBe(1);

@@ -7,6 +7,7 @@ import {
   gte,
   isNotNull,
   isNull,
+  sql,
 } from "drizzle-orm";
 import {
   apiKeys,
@@ -56,13 +57,17 @@ export function resolveHomeReadiness(
 }
 
 export async function loadDashboardHome(team: Team, since: Date) {
+  const statusDay = sql<string>`date(${emails.createdAt} / 1000, 'unixepoch', 'localtime')`;
+  const openDay = sql<string>`date(${emailEvents.createdAt} / 1000, 'unixepoch', 'localtime')`;
   const [
     [latestDomain],
     [verifiedDomain],
     activeKeys,
     [sentEmail],
     statusRows,
+    dailyStatusRows,
     [openedResult],
+    dailyOpenRows,
     recentEmails,
     [webhookResult],
     [audienceResult],
@@ -96,6 +101,12 @@ export async function loadDashboardHome(team: Team, since: Date) {
       .where(and(eq(emails.teamId, team.id), gte(emails.createdAt, since)))
       .groupBy(emails.status),
     db
+      .select({ day: statusDay, status: emails.status, count: count() })
+      .from(emails)
+      .where(and(eq(emails.teamId, team.id), gte(emails.createdAt, since)))
+      .groupBy(statusDay, emails.status)
+      .orderBy(statusDay, emails.status),
+    db
       .select({ count: countDistinct(emailEvents.emailId) })
       .from(emailEvents)
       .innerJoin(emails, eq(emailEvents.emailId, emails.id))
@@ -106,6 +117,22 @@ export async function loadDashboardHome(team: Team, since: Date) {
           eq(emailEvents.type, "email.opened"),
         ),
       ),
+    db
+      .select({
+        day: openDay,
+        count: countDistinct(emailEvents.emailId),
+      })
+      .from(emailEvents)
+      .innerJoin(emails, eq(emailEvents.emailId, emails.id))
+      .where(
+        and(
+          eq(emails.teamId, team.id),
+          gte(emailEvents.createdAt, since),
+          eq(emailEvents.type, "email.opened"),
+        ),
+      )
+      .groupBy(openDay)
+      .orderBy(openDay),
     db
       .select({
         id: emails.id,
@@ -143,7 +170,9 @@ export async function loadDashboardHome(team: Team, since: Date) {
     }),
     activeKeyCount: activeKeys.length,
     statusRows,
+    dailyStatusRows,
     openedCount: openedResult.count,
+    dailyOpenRows,
     recentEmails,
     webhookCount: webhookResult.count,
     audienceCount: audienceResult.count,
