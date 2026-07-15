@@ -1,7 +1,11 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
+  buildHomeDailySeries,
+  compareHomeWindows,
+  formatHomeChange,
   formatHomePercentage,
+  homeAttentionItems,
   homeReadinessSteps,
   nextHomeAction,
   summarizeHomeStatuses,
@@ -110,6 +114,78 @@ describe("dashboard Home delivery metrics", () => {
     expect(formatHomePercentage(0, 0)).toBe("—");
     expect(formatHomePercentage(1, 3)).toBe("33%");
     expect(formatHomePercentage(3, 2)).toBe("100%");
+  });
+
+  it("fills a stable daily series and ignores malformed rows", () => {
+    const end = new Date(2026, 6, 15, 12);
+    const series = buildHomeDailySeries(
+      [
+        { day: "2026-07-14", status: "delivered", count: 3 },
+        { day: "2026-07-14", status: "bounced", count: 1 },
+        { day: "2026-07-15", status: "failed", count: 2 },
+        { day: "not-a-day", status: "delivered", count: 99 },
+        { day: "2026-07-15", status: "delivered", count: -4 },
+      ],
+      [{ day: "2026-07-14", count: 2 }],
+      end,
+      3,
+    );
+
+    expect(series.map(({ day }) => day)).toEqual([
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15",
+    ]);
+    expect(series[0]).toMatchObject({ sent: 0, delivered: 0, opened: 0, issues: 0 });
+    expect(series[1]).toMatchObject({ sent: 4, delivered: 3, opened: 2, issues: 1 });
+    expect(series[2]).toMatchObject({ sent: 0, delivered: 0, opened: 0, issues: 2 });
+  });
+
+  it("compares the latest seven days with the prior seven", () => {
+    const series = buildHomeDailySeries(
+      [
+        { day: "2026-07-02", status: "delivered", count: 4 },
+        { day: "2026-07-10", status: "delivered", count: 8 },
+        { day: "2026-07-10", status: "bounced", count: 2 },
+      ],
+      [
+        { day: "2026-07-02", count: 1 },
+        { day: "2026-07-10", count: 5 },
+      ],
+      new Date(2026, 6, 15, 12),
+      14,
+    );
+
+    expect(compareHomeWindows(series)).toEqual({
+      current: { sent: 10, delivered: 8, opened: 5, issues: 2 },
+      previous: { sent: 4, delivered: 4, opened: 1, issues: 0 },
+    });
+  });
+
+  it("describes changes without inventing a zero baseline percentage", () => {
+    expect(formatHomeChange(0, 0)).toBe("No activity yet");
+    expect(formatHomeChange(5, 0)).toBe("New this week");
+    expect(formatHomeChange(10, 8)).toBe("+25% vs prior 7d");
+    expect(formatHomeChange(4, 8)).toBe("−50% vs prior 7d");
+  });
+
+  it("surfaces blockers and delivery risk without making webhooks required", () => {
+    expect(
+      homeAttentionItems({
+        readiness: {
+          domain: "verified",
+          hasApiKey: true,
+          hasSentEmail: true,
+        },
+        bouncedOrFailed: 2,
+        todayUsage: 81,
+        dailyLimit: 100,
+        webhookCount: 0,
+      }),
+    ).toEqual([
+      expect.objectContaining({ key: "delivery-issues", tone: "danger" }),
+      expect.objectContaining({ key: "daily-limit", tone: "warning" }),
+    ]);
   });
 });
 

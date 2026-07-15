@@ -167,3 +167,184 @@ export function formatHomePercentage(value: number, total: number): string {
   const percentage = Math.round((Math.max(0, value) / total) * 100);
   return `${Math.min(100, percentage)}%`;
 }
+
+export type HomeDailyStatusRow = Readonly<{
+  day: string;
+  status: string;
+  count: number;
+}>;
+
+export type HomeDailyOpenRow = Readonly<{
+  day: string;
+  count: number;
+}>;
+
+export type HomeDailyPoint = Readonly<{
+  day: string;
+  label: string;
+  sent: number;
+  delivered: number;
+  opened: number;
+  issues: number;
+}>;
+
+function localDayKey(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+const homeDayLabel = new Intl.DateTimeFormat("en-GB", {
+  day: "2-digit",
+  month: "short",
+});
+
+export function buildHomeDailySeries(
+  statusRows: readonly HomeDailyStatusRow[],
+  openRows: readonly HomeDailyOpenRow[],
+  endDate: Date,
+  days = 14,
+): readonly HomeDailyPoint[] {
+  if (!Number.isFinite(endDate.getTime()) || days <= 0) return [];
+
+  const points = Array.from({ length: Math.floor(days) }, (_, index) => {
+    const date = new Date(endDate);
+    date.setHours(12, 0, 0, 0);
+    date.setDate(date.getDate() - (Math.floor(days) - 1 - index));
+    return {
+      day: localDayKey(date),
+      label: homeDayLabel.format(date),
+      sent: 0,
+      delivered: 0,
+      opened: 0,
+      issues: 0,
+    };
+  });
+  const byDay = new Map(points.map((point) => [point.day, point]));
+
+  for (const row of statusRows) {
+    const point = byDay.get(row.day);
+    if (!point) continue;
+    const value = nonNegativeCount(row.count);
+    if (
+      row.status === "sent" ||
+      row.status === "delivered" ||
+      row.status === "bounced"
+    ) {
+      point.sent += value;
+    }
+    if (row.status === "delivered") point.delivered += value;
+    if (row.status === "bounced" || row.status === "failed") {
+      point.issues += value;
+    }
+  }
+
+  for (const row of openRows) {
+    const point = byDay.get(row.day);
+    if (point) point.opened += nonNegativeCount(row.count);
+  }
+
+  return points;
+}
+
+export type HomeWindowSummary = Readonly<{
+  sent: number;
+  delivered: number;
+  opened: number;
+  issues: number;
+}>;
+
+function summarizeHomeWindow(
+  points: readonly HomeDailyPoint[],
+): HomeWindowSummary {
+  return points.reduce<HomeWindowSummary>(
+    (summary, point) => ({
+      sent: summary.sent + point.sent,
+      delivered: summary.delivered + point.delivered,
+      opened: summary.opened + point.opened,
+      issues: summary.issues + point.issues,
+    }),
+    { sent: 0, delivered: 0, opened: 0, issues: 0 },
+  );
+}
+
+export function compareHomeWindows(
+  series: readonly HomeDailyPoint[],
+): Readonly<{
+  current: HomeWindowSummary;
+  previous: HomeWindowSummary;
+}> {
+  return {
+    current: summarizeHomeWindow(series.slice(-7)),
+    previous: summarizeHomeWindow(series.slice(-14, -7)),
+  };
+}
+
+export function formatHomeChange(current: number, previous: number): string {
+  const safeCurrent = nonNegativeCount(current);
+  const safePrevious = nonNegativeCount(previous);
+  if (safeCurrent === 0 && safePrevious === 0) return "No activity yet";
+  if (safePrevious === 0) return "New this week";
+
+  const change = Math.round(((safeCurrent - safePrevious) / safePrevious) * 100);
+  if (change === 0) return "No change vs prior 7d";
+  return `${change > 0 ? "+" : "−"}${Math.abs(change)}% vs prior 7d`;
+}
+
+export type HomeAttentionItem = Readonly<{
+  key: "setup" | "delivery-issues" | "daily-limit";
+  tone: "warning" | "danger";
+  title: string;
+  description: string;
+  href: string;
+}>;
+
+export function homeAttentionItems(input: Readonly<{
+  readiness: HomeReadiness;
+  bouncedOrFailed: number;
+  todayUsage: number;
+  dailyLimit: number | null;
+  webhookCount: number;
+}>): readonly HomeAttentionItem[] {
+  const items: HomeAttentionItem[] = [];
+  const action = nextHomeAction(input.readiness);
+
+  if (action.key !== "ready") {
+    items.push({
+      key: "setup",
+      tone: "warning",
+      title: action.title,
+      description: action.description,
+      href: action.href,
+    });
+  }
+
+  const issues = nonNegativeCount(input.bouncedOrFailed);
+  if (issues > 0) {
+    items.push({
+      key: "delivery-issues",
+      tone: "danger",
+      title: `${issues.toLocaleString()} delivery ${issues === 1 ? "issue" : "issues"}`,
+      description: "Review bounced and failed messages from the last 14 days.",
+      href: "/emails",
+    });
+  }
+
+  const todayUsage = nonNegativeCount(input.todayUsage);
+  if (
+    input.dailyLimit !== null &&
+    input.dailyLimit > 0 &&
+    todayUsage / input.dailyLimit >= 0.8
+  ) {
+    items.push({
+      key: "daily-limit",
+      tone: "warning",
+      title: "Daily sending limit is close",
+      description: `${Math.min(100, Math.round((todayUsage / input.dailyLimit) * 100))}% of today's allowance is used.`,
+      href: "/billing",
+    });
+  }
+
+  return items;
+}
