@@ -4,8 +4,16 @@ import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import path from "node:path";
 import fs from "node:fs";
 import * as schema from "./schema";
+import {
+  databasePathForPhase,
+  NEXT_PRODUCTION_BUILD_PHASE,
+} from "../db-path";
 
-const DB_PATH = process.env.DATABASE_PATH ?? path.join(process.cwd(), "data", "sendthen.db");
+const DB_PATH = databasePathForPhase(
+  process.env.NEXT_PHASE,
+  process.env.DATABASE_PATH,
+  process.cwd(),
+);
 
 declare global {
   var __sendthenDb: ReturnType<typeof createDb> | undefined;
@@ -50,12 +58,9 @@ function createDb() {
   sqlite.pragma("foreign_keys = ON");
   sqlite.pragma("busy_timeout = 5000");
   const db = drizzle(sqlite, { schema });
-  // During `next build` (page-data collection) Next spawns several workers
-  // that each import this module and open the same SQLite file at once.
-  // Running migrations then races on the DB and can throw SQLITE_BUSY, failing
-  // the build. Migrations aren't needed to *build* — only to *serve* — so skip
-  // them in the build phase; they still run at server start / first request.
-  if (process.env.NEXT_PHASE !== "phase-production-build") {
+  // Build workers use independent in-memory databases and skip migrations.
+  // Runtime processes keep the configured persistent database and migrate it.
+  if (process.env.NEXT_PHASE !== NEXT_PRODUCTION_BUILD_PHASE) {
     migrateLocked(db);
   }
   return db;
