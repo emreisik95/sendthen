@@ -31,7 +31,7 @@ export default async function SuppressionsPage() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <PageHeader title="Suppressions" />
+      <PageHeader title="Blocked recipients" />
       <p className="mb-6 text-sm text-fg-muted">
         Addresses here never receive email from you. Hard bounces and
         complaints are added automatically.
@@ -46,21 +46,21 @@ export default async function SuppressionsPage() {
           className={`${inputCls} max-w-sm font-mono`}
         />
         <button type="submit" className={btnPrimary}>
-          Suppress
+          Block recipient
         </button>
       </form>
 
       {rows.length === 0 ? (
         <EmptyState
           icon={<IconBan />}
-          title="Suppression list is empty — that's good."
+          title="No blocked recipients — that's good."
           description="Hard bounces and spam complaints land here automatically so those addresses are never emailed again. You can also block an address manually with the form above."
         >
           <a
             href="/docs#suppressions"
             className="text-sm text-fg-muted underline hover:text-fg"
           >
-            Suppression docs →
+            Blocked recipients guide →
           </a>
         </EmptyState>
       ) : (

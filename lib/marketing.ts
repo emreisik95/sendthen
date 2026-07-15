@@ -75,6 +75,18 @@ export interface ComparisonRow {
   values: Readonly<Record<ComparisonProductKey, string>>;
 }
 
+export type ManagedComparisonProductKey = Exclude<
+  ComparisonProductKey,
+  "sendthen"
+>;
+
+export type ComparisonEvidenceMatrix = Readonly<
+  Record<
+    ManagedComparisonProductKey,
+    Readonly<Record<ComparisonRowKey, readonly string[]>>
+  >
+>;
+
 export const landingCtaPaths = {
   primary: "#self-host",
   secondary: "/signup",
@@ -304,6 +316,93 @@ export const comparisonProducts = [
     ],
   },
 ] as const satisfies readonly ComparisonProduct[];
+
+export const comparisonEvidence = {
+  resend: {
+    selfHost: [
+      "https://resend.com/docs/api-reference/emails/send-email",
+      "https://resend.com/pricing",
+    ],
+    openSource: [
+      "https://resend.com/docs/api-reference/emails/send-email",
+      "https://resend.com/pricing",
+    ],
+    transportChoice: [
+      "https://resend.com/docs/api-reference/emails/send-email",
+    ],
+    localSandbox: [
+      "https://resend.com/docs/knowledge-base/what-email-addresses-to-use-for-testing",
+    ],
+    portableState: [
+      "https://resend.com/docs/api-reference/emails/send-email",
+      "https://resend.com/pricing",
+    ],
+    softwareUsageFee: ["https://resend.com/pricing"],
+  },
+  postmark: {
+    selfHost: [
+      "https://postmarkapp.com/developer/",
+      "https://postmarkapp.com/pricing",
+    ],
+    openSource: [
+      "https://postmarkapp.com/developer/",
+      "https://postmarkapp.com/pricing",
+    ],
+    transportChoice: ["https://postmarkapp.com/developer/"],
+    localSandbox: [
+      "https://postmarkapp.com/developer/user-guide/sandbox-mode/server-sandbox-mode",
+    ],
+    portableState: [
+      "https://postmarkapp.com/developer/",
+      "https://postmarkapp.com/pricing",
+    ],
+    softwareUsageFee: ["https://postmarkapp.com/pricing"],
+  },
+  sendGrid: {
+    selfHost: [
+      "https://www.twilio.com/docs/sendgrid/api-reference/mail-send/mail-send",
+      "https://www.twilio.com/en-us/products/email-api/pricing",
+    ],
+    openSource: [
+      "https://www.twilio.com/docs/sendgrid/api-reference/mail-send/mail-send",
+      "https://www.twilio.com/en-us/products/email-api/pricing",
+    ],
+    transportChoice: [
+      "https://www.twilio.com/docs/sendgrid/api-reference/mail-send/mail-send",
+    ],
+    localSandbox: [
+      "https://www.twilio.com/docs/sendgrid/for-developers/sending-email/sandbox-mode",
+    ],
+    portableState: [
+      "https://www.twilio.com/docs/sendgrid/api-reference/mail-send/mail-send",
+      "https://www.twilio.com/en-us/products/email-api/pricing",
+    ],
+    softwareUsageFee: [
+      "https://www.twilio.com/en-us/products/email-api/pricing",
+    ],
+  },
+  mailgun: {
+    selfHost: [
+      "https://documentation.mailgun.com/docs/mailgun/user-manual/sending-messages/send-http",
+      "https://www.mailgun.com/pricing/",
+    ],
+    openSource: [
+      "https://documentation.mailgun.com/docs/mailgun/user-manual/sending-messages/send-http",
+      "https://www.mailgun.com/pricing/",
+    ],
+    transportChoice: [
+      "https://documentation.mailgun.com/docs/mailgun/user-manual/sending-messages/send-http",
+    ],
+    localSandbox: [
+      "https://documentation.mailgun.com/docs/mailgun/user-manual/sending-messages/test-mode",
+    ],
+    portableState: [
+      "https://documentation.mailgun.com/docs/mailgun/user-manual/sending-messages/send-http",
+      "https://www.mailgun.com/pricing/",
+    ],
+    softwareUsageFee: ["https://www.mailgun.com/pricing/"],
+  },
+} as const satisfies ComparisonEvidenceMatrix;
 
 const managedServiceValues = {
   resend: "Managed service",

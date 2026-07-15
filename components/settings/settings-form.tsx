@@ -147,7 +147,7 @@ export function SettingsForm(props: SettingsFormProps) {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <PageHeader title="Settings" />
+      <PageHeader title="Delivery & tracking" />
       <p className="-mt-4 mb-6 text-sm text-fg-muted">
         Transport and tracking for the {props.teamName} team.
       </p>

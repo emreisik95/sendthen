@@ -32,11 +32,11 @@ export default async function AudiencesPage() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <PageHeader title="Audiences" />
+      <PageHeader title="Contacts" />
       <p className="mb-6 text-sm text-fg-muted">
-        An audience is a named list of contacts — the people a{" "}
+        Contact lists group the people a{" "}
         <Link href="/broadcasts" className="text-lime hover:underline">
-          broadcast
+          campaign
         </Link>{" "}
         goes to. Contacts can unsubscribe themselves with one click; sendthen
         skips them automatically.
@@ -45,26 +45,26 @@ export default async function AudiencesPage() {
       <form action={createAudienceAction} className="mb-6 flex gap-2">
         <input
           name="name"
-          placeholder="audience name (e.g. newsletter)"
+          placeholder="contact list name (e.g. newsletter)"
           required
           className={`${inputCls} max-w-sm`}
         />
         <button type="submit" className={btnPrimary}>
-          Create audience
+          Create contact list
         </button>
       </form>
 
       {rows.length === 0 ? (
         <EmptyState
           icon={<IconUsers />}
-          title="No audiences yet."
-          description="Create one above — “newsletter” or “customers” are good first names — then add contacts by hand, or push them from your app with the API. Once an audience has people in it, you can write a broadcast."
+          title="No contact lists yet."
+          description="Create one above — “newsletter” or “customers” are good first names — then add contacts by hand, or push them from your app with the API. Once a list has people in it, you can write a campaign."
         >
           <Link
             href="/docs#audiences"
             className="rounded-md border border-line px-4 py-2 text-sm text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg"
           >
-            How audiences work →
+            How contact lists work →
           </Link>
         </EmptyState>
       ) : (

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   comparisonCaveat,
   comparisonDate,
+  comparisonEvidence,
   comparisonMethodology,
   comparisonProducts,
   comparisonRows,
@@ -142,6 +143,42 @@ describe("landing marketing model", () => {
             isSameOrSubdomain(url.hostname, rootHost),
           ),
         ).toBe(true);
+      }
+    }
+  });
+
+  it("maps every managed comparison cell to that product's listed official sources", () => {
+    const managedProducts = comparisonProducts.filter(
+      (product) => product.key !== "sendthen",
+    );
+
+    expect(Object.keys(comparisonEvidence)).toEqual(
+      managedProducts.map((product) => product.key),
+    );
+
+    for (const product of managedProducts) {
+      const productEvidence = comparisonEvidence[product.key];
+      const officialUrls = new Set<string>(
+        product.sources.map((source) => source.url),
+      );
+
+      expect(Object.keys(productEvidence)).toEqual(
+        comparisonRows.map((row) => row.key),
+      );
+
+      for (const row of comparisonRows) {
+        const citations = productEvidence[row.key];
+
+        expect(
+          citations.length,
+          `${product.name}/${row.label} has no evidence`,
+        ).toBeGreaterThan(0);
+        for (const citation of citations) {
+          expect(
+            officialUrls.has(citation),
+            `${product.name}/${row.label} cites an unlisted source`,
+          ).toBe(true);
+        }
       }
     }
   });

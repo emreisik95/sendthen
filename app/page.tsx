@@ -75,7 +75,7 @@ export default function Landing() {
 
       <header className="landing-header sticky top-0 z-50 border-b border-hairline">
         <nav
-          className="landing-container flex min-h-[4.25rem] min-w-0 items-center gap-2 sm:gap-4"
+          className="landing-container flex min-h-[4.25rem] min-w-0 flex-wrap items-center gap-x-2 gap-y-0 py-2 sm:gap-x-4 lg:flex-nowrap lg:py-0"
           aria-label="Primary"
         >
           <Link
@@ -121,6 +121,36 @@ export default function Landing() {
               Self-host
             </Link>
           </div>
+
+          <ul
+            className="flex basis-full items-center gap-0.5 overflow-x-auto border-t border-white/10 pt-1 lg:hidden"
+            aria-label="Primary links"
+          >
+            {primaryNavigation.map((item) => (
+              <li className="shrink-0" key={item.label}>
+                <a
+                  className="inline-flex min-h-11 items-center rounded-lg px-3 text-[0.82rem] font-medium text-[var(--landing-text-secondary)] no-underline transition-colors hover:text-fg"
+                  href={item.href}
+                  target={
+                    item.href.startsWith("https://") ? "_blank" : undefined
+                  }
+                  rel={
+                    item.href.startsWith("https://")
+                      ? "noopener noreferrer"
+                      : undefined
+                  }
+                >
+                  {item.label}
+                  {item.href.startsWith("https://") ? (
+                    <>
+                      <span aria-hidden> ↗</span>
+                      <span className="sr-only"> (opens in a new tab)</span>
+                    </>
+                  ) : null}
+                </a>
+              </li>
+            ))}
+          </ul>
         </nav>
       </header>
 

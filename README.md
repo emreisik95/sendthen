@@ -158,14 +158,17 @@ POST /api/v1/emails ──► queue (SQLite) ──► DKIM sign ──► trans
 ## Testing
 
 ```bash
-pnpm test              # 18 unit tests (vitest)
+pnpm test              # unit and source-invariant tests (vitest)
 ```
 
 End-to-end (37 checks: auth, domains + DKIM, single/batch/template sends, idempotency, suppressions, tracking, webhook signatures, broadcast fan-out, unsubscribe, inbound):
 
 ```bash
-# start a server with mocked DNS and a self-pointing public URL
-SENDTHEN_DNS_MOCK=verified SENDTHEN_PUBLIC_URL=http://127.0.0.1:3100 pnpm dev -- -p 3100
+# start a server with mocked DNS, matching ingest key, and a self-pointing URL
+SENDTHEN_DNS_MOCK=verified \
+SENDTHEN_INGEST_KEY=e2e-ingest \
+SENDTHEN_PUBLIC_URL=http://127.0.0.1:3100 \
+pnpm exec next dev -p 3100
 
 node scripts/e2e.mjs http://127.0.0.1:3100
 ```

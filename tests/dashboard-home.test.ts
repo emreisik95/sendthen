@@ -118,14 +118,21 @@ describe("dashboard Home server page", () => {
     new URL("../app/(dash)/overview/page.tsx", import.meta.url),
     "utf8",
   );
+  const dataSource = readFileSync(
+    new URL("../lib/dashboard-home-data.ts", import.meta.url),
+    "utf8",
+  );
 
   it("loads bounded operational data instead of rebuilding Analytics", () => {
     expect(source).toContain("nextHomeAction");
     expect(source).toContain("homeReadinessSteps");
-    expect(source).toContain("teamUsage(team)");
-    expect(source).toContain("countDistinct(emailEvents.emailId)");
-    expect(source).toContain(".groupBy(emails.status)");
-    expect(source).toMatch(
+    expect(source).toContain("loadDashboardHome(team, since)");
+    expect(source).toContain("requireUser()");
+    expect(source).toContain("getActiveTeam(user)");
+    expect(dataSource).toContain("teamUsage(team)");
+    expect(dataSource).toContain("countDistinct(emailEvents.emailId)");
+    expect(dataSource).toContain(".groupBy(emails.status)");
+    expect(dataSource).toMatch(
       /orderBy\(desc\(emails\.createdAt\)\)[\s\S]{0,120}\.limit\(5\)/,
     );
     expect(source).not.toContain("Daily volume");

@@ -24,7 +24,9 @@ export type Scope = (typeof SCOPES)[number]["value"];
 const ALL_SCOPES = SCOPES.map((s) => s.value);
 
 /** Effective scopes: explicit list, or derived from the legacy permission. */
-export function scopesOf(key: ApiKey): Scope[] {
+export function scopesOf(
+  key: Pick<ApiKey, "permission" | "scopes">,
+): Scope[] {
   if (key.scopes && key.scopes.length > 0) return key.scopes as Scope[];
   if (key.permission === "sending") return ["emails.send", "emails.read"];
   return [...ALL_SCOPES];

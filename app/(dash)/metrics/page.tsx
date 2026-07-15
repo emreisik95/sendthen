@@ -227,7 +227,7 @@ export default async function MetricsPage({
   if (rows.length === 0) {
     return (
       <div className="mx-auto max-w-5xl">
-        <PageHeader title="Metrics">
+        <PageHeader title="Analytics">
           <RangePills active={range} />
         </PageHeader>
         <Card className="px-6 py-16 text-center">
@@ -377,7 +377,7 @@ export default async function MetricsPage({
 
   return (
     <div className="mx-auto max-w-5xl">
-      <PageHeader title="Metrics">
+      <PageHeader title="Analytics">
         <RangePills active={range} />
       </PageHeader>
 
@@ -605,10 +605,10 @@ export default async function MetricsPage({
         </Card>
 
         <Card className="p-5">
-          <h2 className="mb-3 text-sm font-medium">Top broadcasts</h2>
+          <h2 className="mb-3 text-sm font-medium">Top campaigns</h2>
           {topBroadcasts.length === 0 ? (
             <p className="py-4 text-xs text-fg-faint">
-              No broadcast sends in range.
+              No campaign sends in range.
             </p>
           ) : (
             <table className="w-full text-sm">

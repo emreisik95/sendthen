@@ -399,4 +399,3 @@ Use `superpowers:requesting-code-review`, address only evidence-backed issues, r
 git add <affected-files>
 git commit -m "fix: address redesign verification findings"
 ```
-

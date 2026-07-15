@@ -136,39 +136,50 @@ export const apiKeys = sqliteTable(
     lastUsedAt: integer("last_used_at", { mode: "timestamp_ms" }),
     revokedAt: integer("revoked_at", { mode: "timestamp_ms" }),
   },
-  (t) => [index("api_keys_hash_idx").on(t.tokenHash)],
+  (t) => [
+    index("api_keys_hash_idx").on(t.tokenHash),
+    index("api_keys_team_revoked_idx").on(t.teamId, t.revokedAt),
+  ],
 );
 
-export const domains = sqliteTable("domains", {
-  id: text("id").primaryKey(),
-  userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
-  teamId: text("team_id").references(() => teams.id, { onDelete: "cascade" }),
-  name: text("name").notNull().unique(),
-  status: text("status", {
-    enum: ["pending", "verified", "failed"],
-  })
-    .notNull()
-    .default("pending"),
-  // DKIM
-  dkimSelector: text("dkim_selector").notNull().default("stmail"),
-  dkimPrivateKey: text("dkim_private_key").notNull(),
-  dkimPublicKey: text("dkim_public_key").notNull(),
-  // resolved verification state per record
-  dkimVerified: integer("dkim_verified", { mode: "boolean" })
-    .notNull()
-    .default(false),
-  spfVerified: integer("spf_verified", { mode: "boolean" })
-    .notNull()
-    .default(false),
-  // receiving: MX record for this domain resolves to this instance's host
-  mxVerified: integer("mx_verified", { mode: "boolean" })
-    .notNull()
-    .default(false),
-  mxCheckedAt: integer("mx_checked_at", { mode: "timestamp_ms" }),
-  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
-  verifiedAt: integer("verified_at", { mode: "timestamp_ms" }),
-  lastCheckedAt: integer("last_checked_at", { mode: "timestamp_ms" }),
-});
+export const domains = sqliteTable(
+  "domains",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").references(() => users.id, {
+      onDelete: "cascade",
+    }),
+    teamId: text("team_id").references(() => teams.id, {
+      onDelete: "cascade",
+    }),
+    name: text("name").notNull().unique(),
+    status: text("status", {
+      enum: ["pending", "verified", "failed"],
+    })
+      .notNull()
+      .default("pending"),
+    // DKIM
+    dkimSelector: text("dkim_selector").notNull().default("stmail"),
+    dkimPrivateKey: text("dkim_private_key").notNull(),
+    dkimPublicKey: text("dkim_public_key").notNull(),
+    // resolved verification state per record
+    dkimVerified: integer("dkim_verified", { mode: "boolean" })
+      .notNull()
+      .default(false),
+    spfVerified: integer("spf_verified", { mode: "boolean" })
+      .notNull()
+      .default(false),
+    // receiving: MX record for this domain resolves to this instance's host
+    mxVerified: integer("mx_verified", { mode: "boolean" })
+      .notNull()
+      .default(false),
+    mxCheckedAt: integer("mx_checked_at", { mode: "timestamp_ms" }),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+    verifiedAt: integer("verified_at", { mode: "timestamp_ms" }),
+    lastCheckedAt: integer("last_checked_at", { mode: "timestamp_ms" }),
+  },
+  (t) => [index("domains_team_created_idx").on(t.teamId, t.createdAt)],
+);
 
 export interface EmailAttachment {
   filename: string;
@@ -272,17 +283,25 @@ export const emailEvents = sqliteTable(
   ],
 );
 
-export const webhooks = sqliteTable("webhooks", {
-  id: text("id").primaryKey(),
-  userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
-  teamId: text("team_id").references(() => teams.id, { onDelete: "cascade" }),
-  url: text("url").notNull(),
-  // whsec_-prefixed HMAC secret
-  secret: text("secret").notNull(),
-  events: text("events", { mode: "json" }).$type<string[]>().notNull(),
-  enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
-  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
-});
+export const webhooks = sqliteTable(
+  "webhooks",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").references(() => users.id, {
+      onDelete: "cascade",
+    }),
+    teamId: text("team_id").references(() => teams.id, {
+      onDelete: "cascade",
+    }),
+    url: text("url").notNull(),
+    // whsec_-prefixed HMAC secret
+    secret: text("secret").notNull(),
+    events: text("events", { mode: "json" }).$type<string[]>().notNull(),
+    enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+  },
+  (t) => [index("webhooks_team_idx").on(t.teamId)],
+);
 
 export const webhookDeliveries = sqliteTable(
   "webhook_deliveries",
@@ -364,7 +383,10 @@ export const audiences = sqliteTable(
     name: text("name").notNull(),
     createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
   },
-  (t) => [index("audiences_user_idx").on(t.userId)],
+  (t) => [
+    index("audiences_user_idx").on(t.userId),
+    index("audiences_team_idx").on(t.teamId),
+  ],
 );
 
 export const contacts = sqliteTable(
@@ -412,7 +434,10 @@ export const broadcasts = sqliteTable(
     sentAt: integer("sent_at", { mode: "timestamp_ms" }),
     createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
   },
-  (t) => [index("broadcasts_user_idx").on(t.userId)],
+  (t) => [
+    index("broadcasts_user_idx").on(t.userId),
+    index("broadcasts_team_idx").on(t.teamId),
+  ],
 );
 
 export const inboundEmails = sqliteTable(

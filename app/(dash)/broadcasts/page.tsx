@@ -24,9 +24,9 @@ import { Select } from "@/components/select";
 export const dynamic = "force-dynamic";
 
 const ERRORS: Record<string, string> = {
-  no_audience: "Pick a valid audience.",
+  no_audience: "Pick a valid contact list.",
   missing: "From, subject and HTML are required.",
-  not_sendable: "That broadcast was already sent.",
+  not_sendable: "That campaign was already sent.",
   domain_not_verified:
     "The sender domain is not verified — verify it under Domains first.",
 };
@@ -88,10 +88,10 @@ export default async function BroadcastsPage({
 
   return (
     <div className="mx-auto max-w-4xl">
-      <PageHeader title="Broadcasts" />
+      <PageHeader title="Campaigns" />
       <p className="mb-6 text-sm text-fg-muted">
-        Send one email to a whole audience. Every contact gets their own copy
-        with personal variables and a one-click unsubscribe link.
+        Send one email to a contact list. Every contact gets their own copy with
+        personal variables and a one-click unsubscribe link.
       </p>
 
       {error && ERRORS[error] && (
@@ -108,14 +108,14 @@ export default async function BroadcastsPage({
             height={28}
           />
           <p className="mb-2 text-sm text-fg">
-            Broadcasts need someone to talk to.
+            Campaigns need someone to talk to.
           </p>
           <p className="mx-auto mb-6 max-w-sm text-sm text-fg-muted">
-            Create an audience, add a few contacts, then come back here to
-            write your first broadcast.
+            Create a contact list, add a few contacts, then come back here to
+            write your first campaign.
           </p>
           <Link href="/audiences" className={btnPrimary}>
-            Create an audience →
+            Create a contact list →
           </Link>
         </Card>
       ) : (
@@ -126,13 +126,13 @@ export default async function BroadcastsPage({
             className="mb-8 rounded-[10px] border border-line bg-surface"
           >
             <div className="border-b border-hairline px-4 py-3">
-              <h2 className="text-sm font-medium">New broadcast</h2>
+              <h2 className="text-sm font-medium">New campaign</h2>
             </div>
             <div className="space-y-4 p-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-fg-faint">
-                    Audience
+                    Contact list
                   </label>
                   <Select
                     name="audienceId"
@@ -218,7 +218,7 @@ export default async function BroadcastsPage({
 
           {/* list */}
           <h2 className="mb-3 text-sm font-medium uppercase tracking-wider text-fg-faint">
-            All broadcasts
+            All campaigns
           </h2>
           {rows.length === 0 ? (
             <Card className="px-6 py-12 text-center text-sm text-fg-muted">

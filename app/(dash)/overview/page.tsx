@@ -1,34 +1,13 @@
 import Link from "next/link";
-import {
-  and,
-  count,
-  countDistinct,
-  desc,
-  eq,
-  gte,
-  isNotNull,
-  isNull,
-} from "drizzle-orm";
-import {
-  apiKeys,
-  audiences,
-  broadcasts,
-  db,
-  domains,
-  emailEvents,
-  emails,
-  webhooks,
-} from "@/lib/db";
 import { requireUser } from "@/lib/auth-user";
 import { getActiveTeam } from "@/lib/team";
-import { teamUsage } from "@/lib/quota";
 import {
   formatHomePercentage,
   homeReadinessSteps,
   nextHomeAction,
   summarizeHomeStatuses,
-  type HomeReadiness,
 } from "@/lib/dashboard-home";
+import { loadDashboardHome } from "@/lib/dashboard-home-data";
 import {
   Card,
   PageHeader,
@@ -60,87 +39,21 @@ export default async function OverviewPage() {
   const { team } = await getActiveTeam(user);
   const since = beginningOfWindow();
 
-  const [
-    [latestDomain],
-    [activeKeyResult],
-    [sentEmailResult],
+  const {
+    readiness,
+    activeKeyCount,
     statusRows,
-    [openedResult],
+    openedCount,
     recentEmails,
-    [webhookResult],
-    [audienceResult],
-    [campaignResult],
+    webhookCount,
+    audienceCount,
+    campaignCount,
     usage,
-  ] = await Promise.all([
-    db
-      .select({ id: domains.id, status: domains.status })
-      .from(domains)
-      .where(eq(domains.teamId, team.id))
-      .orderBy(desc(domains.createdAt))
-      .limit(1),
-    db
-      .select({ count: count() })
-      .from(apiKeys)
-      .where(and(eq(apiKeys.teamId, team.id), isNull(apiKeys.revokedAt))),
-    db
-      .select({ id: emails.id })
-      .from(emails)
-      .where(and(eq(emails.teamId, team.id), isNotNull(emails.sentAt)))
-      .limit(1),
-    db
-      .select({ status: emails.status, count: count() })
-      .from(emails)
-      .where(and(eq(emails.teamId, team.id), gte(emails.createdAt, since)))
-      .groupBy(emails.status),
-    db
-      .select({ count: countDistinct(emailEvents.emailId) })
-      .from(emailEvents)
-      .innerJoin(emails, eq(emailEvents.emailId, emails.id))
-      .where(
-        and(
-          eq(emails.teamId, team.id),
-          gte(emails.createdAt, since),
-          eq(emailEvents.type, "email.opened"),
-        ),
-      ),
-    db
-      .select({
-        id: emails.id,
-        to: emails.to,
-        subject: emails.subject,
-        status: emails.status,
-        createdAt: emails.createdAt,
-        sentAt: emails.sentAt,
-      })
-      .from(emails)
-      .where(eq(emails.teamId, team.id))
-      .orderBy(desc(emails.createdAt))
-      .limit(5),
-    db
-      .select({ count: count() })
-      .from(webhooks)
-      .where(eq(webhooks.teamId, team.id)),
-    db
-      .select({ count: count() })
-      .from(audiences)
-      .where(eq(audiences.teamId, team.id)),
-    db
-      .select({ count: count() })
-      .from(broadcasts)
-      .where(eq(broadcasts.teamId, team.id)),
-    teamUsage(team),
-  ]);
-
-  const readiness: HomeReadiness = {
-    domain: latestDomain?.status ?? "missing",
-    domainId: latestDomain?.id,
-    hasApiKey: activeKeyResult.count > 0,
-    hasSentEmail: Boolean(sentEmailResult),
-  };
+  } = await loadDashboardHome(team, since);
   const action = nextHomeAction(readiness);
   const readinessSteps = homeReadinessSteps(readiness);
   const statusSummary = summarizeHomeStatuses(statusRows);
-  const opened = openedResult.count;
+  const opened = openedCount;
   const unlimited = process.env.SENDTHEN_UNLIMITED === "true";
 
   const metrics = [
@@ -399,7 +312,7 @@ export default async function OverviewPage() {
             >
               <span className="block text-sm text-fg">Contacts</span>
               <span className="mt-0.5 block text-xs text-fg-muted">
-                {audienceResult.count.toLocaleString()} audiences
+                {audienceCount.toLocaleString()} contact lists
               </span>
             </Link>
             <Link
@@ -408,7 +321,7 @@ export default async function OverviewPage() {
             >
               <span className="block text-sm text-fg">Campaigns</span>
               <span className="mt-0.5 block text-xs text-fg-muted">
-                {campaignResult.count.toLocaleString()} campaigns
+                {campaignCount.toLocaleString()} campaigns
               </span>
             </Link>
             <Link
@@ -417,8 +330,8 @@ export default async function OverviewPage() {
             >
               <span className="block text-sm text-fg">Configuration</span>
               <span className="mt-0.5 block text-xs text-fg-muted">
-                {activeKeyResult.count.toLocaleString()} active keys ·{" "}
-                {webhookResult.count.toLocaleString()} webhooks
+                {activeKeyCount.toLocaleString()} active keys ·{" "}
+                {webhookCount.toLocaleString()} webhooks
               </span>
             </Link>
           </Card>
