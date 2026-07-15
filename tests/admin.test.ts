@@ -182,7 +182,13 @@ describe("admin dashboard data", () => {
         }),
       ]),
     );
-    expect(dashboard.users[0].id).toBe(secondMember.id);
+    const orderedIds = dashboard.users.map((user) => user.id);
+    expect(orderedIds.indexOf(secondMember.id)).toBeLessThan(
+      orderedIds.indexOf(member.id),
+    );
+    expect(orderedIds.indexOf(member.id)).toBeLessThan(
+      orderedIds.indexOf(admin.id),
+    );
     expect(dashboard.users.find((user) => user.id === admin.id)?.isCurrent).toBe(
       true,
     );
