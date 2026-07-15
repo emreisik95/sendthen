@@ -1,242 +1,429 @@
-import { and, eq, gte, inArray } from "drizzle-orm";
-import { db, emailEvents, emails } from "@/lib/db";
+import Link from "next/link";
+import {
+  and,
+  count,
+  countDistinct,
+  desc,
+  eq,
+  gte,
+  isNotNull,
+  isNull,
+} from "drizzle-orm";
+import {
+  apiKeys,
+  audiences,
+  broadcasts,
+  db,
+  domains,
+  emailEvents,
+  emails,
+  webhooks,
+} from "@/lib/db";
 import { requireUser } from "@/lib/auth-user";
 import { getActiveTeam } from "@/lib/team";
-import { Card, PageHeader } from "@/components/ui";
+import { teamUsage } from "@/lib/quota";
+import {
+  formatHomePercentage,
+  homeReadinessSteps,
+  nextHomeAction,
+  summarizeHomeStatuses,
+  type HomeReadiness,
+} from "@/lib/dashboard-home";
+import {
+  Card,
+  PageHeader,
+  StatusPill,
+  btnPrimary,
+  btnSecondary,
+  fmtDate,
+} from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
 const DAYS = 14;
 
-const SEGMENTS = [
-  { key: "delivered", label: "Delivered", color: "var(--ok)" },
-  { key: "sent", label: "Sent", color: "var(--info)" },
-  { key: "queued", label: "Queued", color: "var(--fg-muted)" },
-  { key: "failed", label: "Bounced / failed", color: "var(--danger)" },
-  { key: "canceled", label: "Canceled", color: "var(--fg-faint)" },
-] as const;
+function beginningOfWindow(): Date {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - (DAYS - 1));
+  return start;
+}
 
-type SegKey = (typeof SEGMENTS)[number]["key"];
-
-function bucketOf(status: string): SegKey {
-  if (status === "delivered") return "delivered";
-  if (status === "sent" || status === "sending") return "sent";
-  if (status === "queued") return "queued";
-  if (status === "canceled") return "canceled";
-  return "failed"; // bounced + failed
+function quotaLabel(value: number, limit: number | null): string {
+  return limit === null
+    ? `${value.toLocaleString()} · no daily cap`
+    : `${value.toLocaleString()} / ${limit.toLocaleString()}`;
 }
 
 export default async function OverviewPage() {
   const user = await requireUser();
   const { team } = await getActiveTeam(user);
-  const since = new Date(Date.now() - DAYS * 86_400_000);
-  since.setHours(0, 0, 0, 0);
+  const since = beginningOfWindow();
 
-  const rows = await db
-    .select({ status: emails.status, createdAt: emails.createdAt, id: emails.id })
-    .from(emails)
-    .where(and(eq(emails.teamId, team.id), gte(emails.createdAt, since)));
+  const [
+    [latestDomain],
+    [activeKeyResult],
+    [sentEmailResult],
+    statusRows,
+    [openedResult],
+    recentEmails,
+    [webhookResult],
+    [audienceResult],
+    [campaignResult],
+    usage,
+  ] = await Promise.all([
+    db
+      .select({ id: domains.id, status: domains.status })
+      .from(domains)
+      .where(eq(domains.teamId, team.id))
+      .orderBy(desc(domains.createdAt))
+      .limit(1),
+    db
+      .select({ count: count() })
+      .from(apiKeys)
+      .where(and(eq(apiKeys.teamId, team.id), isNull(apiKeys.revokedAt))),
+    db
+      .select({ id: emails.id })
+      .from(emails)
+      .where(and(eq(emails.teamId, team.id), isNotNull(emails.sentAt)))
+      .limit(1),
+    db
+      .select({ status: emails.status, count: count() })
+      .from(emails)
+      .where(and(eq(emails.teamId, team.id), gte(emails.createdAt, since)))
+      .groupBy(emails.status),
+    db
+      .select({ count: countDistinct(emailEvents.emailId) })
+      .from(emailEvents)
+      .innerJoin(emails, eq(emailEvents.emailId, emails.id))
+      .where(
+        and(
+          eq(emails.teamId, team.id),
+          gte(emails.createdAt, since),
+          eq(emailEvents.type, "email.opened"),
+        ),
+      ),
+    db
+      .select({
+        id: emails.id,
+        to: emails.to,
+        subject: emails.subject,
+        status: emails.status,
+        createdAt: emails.createdAt,
+        sentAt: emails.sentAt,
+      })
+      .from(emails)
+      .where(eq(emails.teamId, team.id))
+      .orderBy(desc(emails.createdAt))
+      .limit(5),
+    db
+      .select({ count: count() })
+      .from(webhooks)
+      .where(eq(webhooks.teamId, team.id)),
+    db
+      .select({ count: count() })
+      .from(audiences)
+      .where(eq(audiences.teamId, team.id)),
+    db
+      .select({ count: count() })
+      .from(broadcasts)
+      .where(eq(broadcasts.teamId, team.id)),
+    teamUsage(team),
+  ]);
 
-  // day buckets, oldest → newest
-  const days: { label: string; key: string; counts: Record<SegKey, number> }[] =
-    [];
-  for (let i = DAYS - 1; i >= 0; i--) {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() - i);
-    days.push({
-      key: d.toDateString(),
-      label: new Intl.DateTimeFormat("en-GB", {
-        day: "2-digit",
-        month: "short",
-      }).format(d),
-      counts: { delivered: 0, sent: 0, queued: 0, failed: 0, canceled: 0 },
-    });
-  }
-  const byKey = new Map(days.map((d) => [d.key, d]));
-  for (const row of rows) {
-    const day = byKey.get(new Date(row.createdAt).toDateString());
-    if (day) day.counts[bucketOf(row.status)]++;
-  }
-  const maxTotal = Math.max(
-    1,
-    ...days.map((d) => Object.values(d.counts).reduce((a, b) => a + b, 0)),
-  );
+  const readiness: HomeReadiness = {
+    domain: latestDomain?.status ?? "missing",
+    domainId: latestDomain?.id,
+    hasApiKey: activeKeyResult.count > 0,
+    hasSentEmail: Boolean(sentEmailResult),
+  };
+  const action = nextHomeAction(readiness);
+  const readinessSteps = homeReadinessSteps(readiness);
+  const statusSummary = summarizeHomeStatuses(statusRows);
+  const opened = openedResult.count;
+  const unlimited = process.env.SENDTHEN_UNLIMITED === "true";
 
-  // engagement: unique emails opened / clicked among this window
-  const ids = rows.map((r) => r.id);
-  const events =
-    ids.length > 0
-      ? await db
-          .select({ type: emailEvents.type, emailId: emailEvents.emailId })
-          .from(emailEvents)
-          .where(
-            and(
-              inArray(emailEvents.emailId, ids.slice(0, 5000)),
-              inArray(emailEvents.type, ["email.opened", "email.clicked"]),
-            ),
-          )
-      : [];
-  const opened = new Set(
-    events.filter((e) => e.type === "email.opened").map((e) => e.emailId),
-  ).size;
-  const clicked = new Set(
-    events.filter((e) => e.type === "email.clicked").map((e) => e.emailId),
-  ).size;
-
-  const total = rows.length;
-  const delivered = rows.filter((r) => bucketOf(r.status) === "delivered").length;
-  const failed = rows.filter((r) => bucketOf(r.status) === "failed").length;
-  const pct = (n: number, of: number) =>
-    of === 0 ? "—" : `${Math.round((n / of) * 100)}%`;
-
-  const tiles = [
-    { label: `Emails · ${DAYS}d`, value: String(total) },
-    { label: "Delivered", value: pct(delivered, total) },
-    { label: "Opened", value: pct(opened, delivered) },
-    { label: "Clicked", value: pct(clicked, delivered) },
-    { label: "Bounced / failed", value: String(failed) },
+  const metrics = [
+    {
+      label: "Sent",
+      value: statusSummary.sent.toLocaleString(),
+      detail: "Finished the sending step",
+    },
+    {
+      label: "Delivered",
+      value: statusSummary.delivered.toLocaleString(),
+      detail: `${formatHomePercentage(
+        statusSummary.delivered,
+        statusSummary.sent,
+      )} of sent`,
+    },
+    {
+      label: "Opened",
+      value: opened.toLocaleString(),
+      detail: `${formatHomePercentage(
+        opened,
+        statusSummary.delivered,
+      )} of delivered`,
+    },
+    {
+      label: "Bounced / failed",
+      value: statusSummary.bouncedOrFailed.toLocaleString(),
+      detail: "Delivery issues to review",
+    },
   ];
 
   return (
-    <div className="mx-auto max-w-5xl">
-      <PageHeader title="Overview" />
+    <div className="mx-auto max-w-6xl">
+      <PageHeader title="Home">
+        <Link href="/metrics" className={btnSecondary}>
+          Open Analytics
+        </Link>
+      </PageHeader>
 
-      {/* stat tiles */}
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
-        {tiles.map((t) => (
-          <Card key={t.label} className="px-4 py-3">
-            <div className="font-mono text-xl tabular-nums text-fg">
-              {t.value}
+      <Card
+        className={`mb-6 overflow-hidden p-5 sm:p-6 ${
+          action.key === "ready" ? "border-ok/35" : "border-warn/35"
+        }`}
+      >
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_15rem] lg:items-center">
+          <div>
+            <p className="mb-2 font-mono text-xs uppercase tracking-wider text-fg-muted">
+              Can I send?
+            </p>
+            <div className="flex items-center gap-2">
+              <span
+                aria-hidden="true"
+                className={`h-2.5 w-2.5 rounded-full ${
+                  action.key === "ready" ? "bg-ok" : "bg-warn"
+                }`}
+              />
+              <h2 className="text-xl font-semibold tracking-tight text-fg">
+                {action.title}
+              </h2>
             </div>
-            <div className="mt-0.5 text-xs text-fg-faint">{t.label}</div>
-          </Card>
-        ))}
-      </div>
-
-      {/* daily volume, segmented by status */}
-      <Card className="p-5">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-sm font-medium">Daily volume</h2>
-          <ul className="flex flex-wrap gap-3">
-            {SEGMENTS.map((s) => (
-              <li
-                key={s.key}
-                className="flex items-center gap-1.5 text-xs text-fg-muted"
-              >
-                <span
-                  aria-hidden
-                  className="h-2 w-2 rounded-full"
-                  style={{ background: s.color }}
-                />
-                {s.label}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="relative">
-          <div className="pointer-events-none absolute right-0 top-0 font-mono text-[10px] text-fg-faint">
-            max {maxTotal}
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-fg-muted">
+              {action.description}
+            </p>
+            <Link href={action.href} className={`${btnPrimary} mt-5`}>
+              {action.label}
+            </Link>
           </div>
-          <div className="flex h-40 items-end gap-1.5 border-b border-line pt-4">
-            {days.map((d) => {
-              const dayTotal = Object.values(d.counts).reduce(
-                (a, b) => a + b,
-                0,
-              );
-              return (
-                <div
-                  key={d.key}
-                  className="group relative flex h-full flex-1 flex-col justify-end"
-                >
-                  {/* hover tooltip */}
-                  <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded-md border border-line bg-surface-3 px-3 py-2 font-mono text-[11px] leading-relaxed group-hover:block">
-                    <div className="text-fg">{d.label} — {dayTotal}</div>
-                    {SEGMENTS.filter((s) => d.counts[s.key] > 0).map((s) => (
-                      <div key={s.key} className="text-fg-muted">
-                        <span
-                          aria-hidden
-                          className="mr-1 inline-block h-1.5 w-1.5 rounded-full align-middle"
-                          style={{ background: s.color }}
-                        />
-                        {s.label}: {d.counts[s.key]}
-                      </div>
-                    ))}
-                    {dayTotal === 0 && (
-                      <div className="text-fg-faint">no emails</div>
-                    )}
-                  </div>
 
-                  {/* segments, top segment rounded */}
-                  {SEGMENTS.map((s, i) => {
-                    const value = d.counts[s.key];
-                    if (value === 0) return null;
-                    const isTop = SEGMENTS.slice(0, i).every(
-                      (p) => d.counts[p.key] === 0,
-                    );
-                    return (
-                      <div
-                        key={s.key}
-                        style={{
-                          background: s.color,
-                          height: `max(${(value / maxTotal) * 100}%, 3px)`,
-                          borderRadius: isTop ? "4px 4px 0 0" : 0,
-                          marginTop: 2,
-                        }}
-                      />
-                    );
-                  })}
-                  {dayTotal === 0 && (
-                    <div className="h-px w-full bg-surface-3" />
-                  )}
+          <div className="rounded-lg border border-line bg-surface-2 p-4">
+            <p className="text-xs font-medium text-fg">Sending usage</p>
+            {unlimited ? (
+              <p className="mt-2 text-sm text-fg-muted">
+                Instance limits are disabled.
+              </p>
+            ) : (
+              <dl className="mt-3 space-y-3 text-xs">
+                <div>
+                  <dt className="text-fg-faint">Today</dt>
+                  <dd className="mt-0.5 font-mono tabular-nums text-fg">
+                    {quotaLabel(usage.today, usage.dailyLimit)}
+                  </dd>
                 </div>
-              );
-            })}
-          </div>
-          <div className="mt-1.5 flex gap-1.5">
-            {days.map((d, i) => (
-              <div
-                key={d.key}
-                className="flex-1 text-center font-mono text-[10px] text-fg-faint"
-              >
-                {i % 2 === DAYS % 2 ? d.label.split(" ")[0] : ""}
-              </div>
-            ))}
+                <div>
+                  <dt className="text-fg-faint">This month</dt>
+                  <dd className="mt-0.5 font-mono tabular-nums text-fg">
+                    {usage.month.toLocaleString()} /{" "}
+                    {usage.monthlyLimit?.toLocaleString() ?? "no cap"}
+                  </dd>
+                </div>
+              </dl>
+            )}
           </div>
         </div>
-
-        {/* table view for accessibility */}
-        <details className="mt-4">
-          <summary className="cursor-pointer text-xs text-fg-faint hover:text-fg-muted">
-            View as table
-          </summary>
-          <table className="mt-3 w-full text-xs">
-            <thead className="text-left text-fg-faint">
-              <tr>
-                <th className="py-1 pr-4 font-medium">Day</th>
-                {SEGMENTS.map((s) => (
-                  <th key={s.key} className="py-1 pr-4 font-medium">
-                    {s.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="font-mono tabular-nums text-fg-muted">
-              {days.map((d) => (
-                <tr key={d.key} className="border-t border-hairline">
-                  <td className="py-1 pr-4">{d.label}</td>
-                  {SEGMENTS.map((s) => (
-                    <td key={s.key} className="py-1 pr-4">
-                      {d.counts[s.key]}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </details>
       </Card>
+
+      <section aria-labelledby="setup-heading" className="mb-6">
+        <div className="mb-3 flex items-center justify-between gap-4">
+          <div>
+            <h2 id="setup-heading" className="text-sm font-medium text-fg">
+              Setup checklist
+            </h2>
+            <p className="mt-0.5 text-xs text-fg-muted">
+              {readinessSteps.filter((step) => step.complete).length}/4 complete
+            </p>
+          </div>
+          {action.key !== "ready" && (
+            <Link
+              href="/onboarding"
+              className="text-xs text-fg-muted underline hover:text-fg"
+            >
+              Open guided setup
+            </Link>
+          )}
+        </div>
+        <Card className="grid gap-px overflow-hidden bg-line sm:grid-cols-2 lg:grid-cols-4">
+          {readinessSteps.map((step, index) => (
+            <Link
+              key={step.key}
+              href={step.href}
+              className="flex min-w-0 items-center gap-3 bg-surface p-4 transition-colors hover:bg-surface-2"
+            >
+              <span
+                aria-hidden="true"
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border font-mono text-xs ${
+                  step.complete
+                    ? "border-ok bg-ok/14 text-ok"
+                    : "border-line text-fg-faint"
+                }`}
+              >
+                {step.complete ? "✓" : index + 1}
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate text-sm text-fg">
+                  {step.label}
+                </span>
+                <span className="mt-0.5 block text-xs text-fg-muted">
+                  {step.complete ? "Complete" : "Needs attention"}
+                </span>
+              </span>
+            </Link>
+          ))}
+        </Card>
+      </section>
+
+      <section aria-labelledby="metrics-heading" className="mb-6">
+        <div className="mb-3 flex items-end justify-between gap-4">
+          <div>
+            <h2 id="metrics-heading" className="text-sm font-medium text-fg">
+              Last 14 days
+            </h2>
+            <p className="mt-0.5 text-xs text-fg-muted">
+              Current outcome totals; detailed trends live in Analytics.
+            </p>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {metrics.map((metric) => (
+            <Card key={metric.label} className="min-w-0 p-4">
+              <p className="font-mono text-2xl tabular-nums text-fg">
+                {metric.value}
+              </p>
+              <p className="mt-1 text-sm font-medium text-fg">{metric.label}</p>
+              <p className="mt-1 text-xs leading-relaxed text-fg-muted">
+                {metric.detail}
+              </p>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
+        <section aria-labelledby="recent-heading" className="min-w-0">
+          <div className="mb-3 flex items-center justify-between gap-4">
+            <h2 id="recent-heading" className="text-sm font-medium text-fg">
+              Recent activity
+            </h2>
+            <Link
+              href="/emails"
+              className="text-xs text-fg-muted underline hover:text-fg"
+            >
+              View all
+            </Link>
+          </div>
+
+          {recentEmails.length === 0 ? (
+            <Card className="px-5 py-10 text-center">
+              <p className="text-sm font-medium text-fg">
+                No email activity yet
+              </p>
+              <p className="mx-auto mt-2 max-w-md text-sm text-fg-muted">
+                Complete the next setup step, then send a request from the
+                email API.
+              </p>
+              <Link href={action.href} className={`${btnSecondary} mt-5`}>
+                {action.label}
+              </Link>
+            </Card>
+          ) : (
+            <Card className="divide-y divide-hairline overflow-hidden">
+              {recentEmails.map((email) => (
+                <Link
+                  key={email.id}
+                  href={`/emails/${email.id}`}
+                  className="grid min-w-0 gap-3 px-4 py-3 transition-colors hover:bg-surface-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-medium text-fg">
+                      {email.subject || "(no subject)"}
+                    </span>
+                    <span className="mt-0.5 block truncate font-mono text-xs text-fg-muted">
+                      to {email.to[0] ?? "unknown recipient"}
+                      {email.to.length > 1 ? ` +${email.to.length - 1}` : ""}
+                    </span>
+                  </span>
+                  <span className="flex flex-wrap items-center gap-3 sm:justify-end">
+                    <StatusPill status={email.status} />
+                    <span className="font-mono text-xs tabular-nums text-fg-faint">
+                      {fmtDate(email.sentAt ?? email.createdAt)}
+                    </span>
+                  </span>
+                </Link>
+              ))}
+            </Card>
+          )}
+        </section>
+
+        <section aria-labelledby="shortcuts-heading">
+          <h2
+            id="shortcuts-heading"
+            className="mb-3 text-sm font-medium text-fg"
+          >
+            Shortcuts
+          </h2>
+          <Card className="divide-y divide-hairline overflow-hidden">
+            <Link
+              href="/emails"
+              className="block p-4 transition-colors hover:bg-surface-2"
+            >
+              <span className="block text-sm text-fg">Send history</span>
+              <span className="mt-0.5 block text-xs text-fg-muted">
+                {statusSummary.sent.toLocaleString()} sent in 14 days
+              </span>
+            </Link>
+            <Link
+              href="/emails/inbound"
+              className="block p-4 transition-colors hover:bg-surface-2"
+            >
+              <span className="block text-sm text-fg">Received mail</span>
+              <span className="mt-0.5 block text-xs text-fg-muted">
+                Open the inbound mailbox
+              </span>
+            </Link>
+            <Link
+              href="/audiences"
+              className="block p-4 transition-colors hover:bg-surface-2"
+            >
+              <span className="block text-sm text-fg">Contacts</span>
+              <span className="mt-0.5 block text-xs text-fg-muted">
+                {audienceResult.count.toLocaleString()} audiences
+              </span>
+            </Link>
+            <Link
+              href="/broadcasts"
+              className="block p-4 transition-colors hover:bg-surface-2"
+            >
+              <span className="block text-sm text-fg">Campaigns</span>
+              <span className="mt-0.5 block text-xs text-fg-muted">
+                {campaignResult.count.toLocaleString()} campaigns
+              </span>
+            </Link>
+            <Link
+              href="/domains"
+              className="block p-4 transition-colors hover:bg-surface-2"
+            >
+              <span className="block text-sm text-fg">Configuration</span>
+              <span className="mt-0.5 block text-xs text-fg-muted">
+                {activeKeyResult.count.toLocaleString()} active keys ·{" "}
+                {webhookResult.count.toLocaleString()} webhooks
+              </span>
+            </Link>
+          </Card>
+        </section>
+      </div>
     </div>
   );
 }
