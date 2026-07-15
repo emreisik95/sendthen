@@ -202,6 +202,8 @@ describe("dashboard Home server page", () => {
   it("loads bounded operational data instead of rebuilding Analytics", () => {
     expect(source).toContain("nextHomeAction");
     expect(source).toContain("homeReadinessSteps");
+    expect(source).toContain("buildHomeDailySeries");
+    expect(source).toContain("compareHomeWindows");
     expect(source).toContain("loadDashboardHome(team, since)");
     expect(source).toContain("requireUser()");
     expect(source).toContain("getActiveTeam(user)");
@@ -211,18 +213,19 @@ describe("dashboard Home server page", () => {
     expect(dataSource).toMatch(
       /orderBy\(desc\(emails\.createdAt\)\)[\s\S]{0,120}\.limit\(5\)/,
     );
-    expect(source).not.toContain("Daily volume");
     expect(source).not.toContain("maxTotal");
   });
 
-  it("answers readiness, metrics, recent activity, and next destinations", () => {
+  it("answers readiness, trends, recent activity, and workspace health", () => {
     for (const text of [
       'title="Home"',
-      "Setup checklist",
-      "Last 14 days",
+      "Launch Sendthen",
+      "Delivery volume",
       "Recent activity",
-      "Shortcuts",
-      "Bounced / failed",
+      "Usage",
+      "Workspace health",
+      "Open Analytics",
+      "Delivery issues",
       "No email activity yet",
     ]) {
       expect(source).toContain(text);
@@ -230,20 +233,24 @@ describe("dashboard Home server page", () => {
 
     for (const href of [
       "/emails",
-      "/emails/inbound",
-      "/audiences",
+      "/metrics",
+      "/webhooks",
       "/domains",
     ]) {
       expect(source).toContain(`href=\"${href}\"`);
     }
   });
 
-  it("keeps quota labels on the essential muted contrast token", () => {
-    expect(source).toMatch(
-      /<dt className="text-fg-muted">Today<\/dt>/,
-    );
-    expect(source).toMatch(
-      /<dt className="text-fg-muted">This month<\/dt>/,
-    );
+  it("keeps dashboard section headings explicit for assistive technology", () => {
+    for (const id of [
+      "launch-heading",
+      "pulse-heading",
+      "volume-heading",
+      "recent-heading",
+      "usage-heading",
+      "health-heading",
+    ]) {
+      expect(source).toContain(`id=\"${id}\"`);
+    }
   });
 });

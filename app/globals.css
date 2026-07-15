@@ -313,6 +313,23 @@ summary {
     var(--landing-panel-raised);
 }
 
+/* Dashboard command center: restrained telemetry texture and setup glow. */
+.dashboard-command-panel {
+  background:
+    radial-gradient(circle at 92% 0%, rgba(198, 255, 0, 0.055), transparent 18rem),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.018), transparent 45%),
+    var(--surface);
+}
+
+.dashboard-volume-grid {
+  background-image: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.045) 1px,
+    transparent 1px
+  );
+  background-size: 100% 25%;
+}
+
 .landing-final-panel {
   background:
     linear-gradient(var(--landing-grid) 1px, transparent 1px),
