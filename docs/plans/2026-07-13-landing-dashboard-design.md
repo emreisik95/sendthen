@@ -67,4 +67,3 @@ Implementation is complete only when:
 - the layout has no horizontal page overflow at mobile width and honors reduced motion;
 - every named competitor row is still supported by an official source as of the comparison date;
 - final copy contains none of the rejected claims: “inbox confirmed,” “better deliverability,” “zero vendors,” “unlimited everything,” or “drop-in replacement.”
-
