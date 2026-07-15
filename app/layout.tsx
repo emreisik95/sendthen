@@ -16,7 +16,7 @@ const jetbrainsMono = JetBrains_Mono({
 const DESCRIPTION =
   "An open-source, self-hosted email control plane with portable state and your choice of SES, SMTP relay, direct MX, or local sandbox transport.";
 
-const SOCIAL_TITLE = "sendthen — own your email stack";
+const SOCIAL_TITLE = "sendthen — Own your email stack.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://sendthen.net"),

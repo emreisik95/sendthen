@@ -13,6 +13,10 @@ const marketingTestSource = readFileSync(
   new URL("./marketing.test.ts", import.meta.url),
   "utf8",
 );
+const layoutSource = readFileSync(
+  new URL("../app/layout.tsx", import.meta.url),
+  "utf8",
+);
 
 const userFacingMarketingExports = [
   "landingCtaPaths",
@@ -85,6 +89,12 @@ describe("landing source invariants", () => {
     );
     expect(marketingTestSource).toContain(
       'new URL("../app/layout.tsx", import.meta.url)',
+    );
+  });
+
+  it("keeps social metadata aligned with the finished card copy", () => {
+    expect(layoutSource).toContain(
+      'const SOCIAL_TITLE = "sendthen — Own your email stack."',
     );
   });
 

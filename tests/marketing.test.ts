@@ -255,7 +255,18 @@ describe("landing marketing model", () => {
 
   it("defines an ownership-focused social preview image", () => {
     expect(socialPreviewImage.url).toBe("/og.png");
-    expect(socialPreviewImage.alt.trim()).not.toBe("");
-    expect(socialPreviewImage.alt).toMatch(/own/i);
+    expect(socialPreviewImage.alt).toBe(
+      "sendthen — Own your email stack.",
+    );
+  });
+
+  it("ships the social preview at the Open Graph landscape size", () => {
+    const image = readFileSync(
+      new URL("../public/og.png", import.meta.url),
+    );
+
+    expect(image.subarray(1, 4).toString("ascii")).toBe("PNG");
+    expect(image.readUInt32BE(16)).toBe(1200);
+    expect(image.readUInt32BE(20)).toBe(630);
   });
 });

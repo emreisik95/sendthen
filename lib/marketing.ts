@@ -82,7 +82,7 @@ export const landingCtaPaths = {
 
 export const socialPreviewImage = {
   url: "/og.png",
-  alt: "sendthen — own your email stack",
+  alt: "sendthen — Own your email stack.",
 } as const satisfies SocialPreviewImage;
 
 export const primaryNavigation = [
