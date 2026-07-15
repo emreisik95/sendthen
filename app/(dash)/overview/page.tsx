@@ -218,13 +218,13 @@ export default async function OverviewPage() {
             ) : (
               <dl className="mt-3 space-y-3 text-xs">
                 <div>
-                  <dt className="text-fg-faint">Today</dt>
+                  <dt className="text-fg-muted">Today</dt>
                   <dd className="mt-0.5 font-mono tabular-nums text-fg">
                     {quotaLabel(usage.today, usage.dailyLimit)}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-fg-faint">This month</dt>
+                  <dt className="text-fg-muted">This month</dt>
                   <dd className="mt-0.5 font-mono tabular-nums text-fg">
                     {usage.month.toLocaleString()} /{" "}
                     {usage.monthlyLimit?.toLocaleString() ?? "no cap"}
@@ -267,7 +267,7 @@ export default async function OverviewPage() {
                 className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border font-mono text-xs ${
                   step.complete
                     ? "border-ok bg-ok/14 text-ok"
-                    : "border-line text-fg-faint"
+                    : "border-line text-fg-muted"
                 }`}
               >
                 {step.complete ? "✓" : index + 1}

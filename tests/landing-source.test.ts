@@ -52,6 +52,24 @@ describe("landing source invariants", () => {
     expect(focusRule?.[1]).toMatch(/(?:box-shadow|outline)[^;]*inset|outline-offset:\s*-/);
   });
 
+  it("declares a dark native-control scheme and intentional touch behavior", () => {
+    expect(cssSource).toMatch(/:root\s*\{[^}]*color-scheme:\s*dark/);
+    expect(cssSource).toMatch(
+      /(?:a|button|summary)[^{]*\{[^}]*touch-action:\s*manipulation/,
+    );
+    expect(cssSource).toContain("-webkit-tap-highlight-color");
+  });
+
+  it("reveals the skip link for visible keyboard focus", () => {
+    expect(cssSource).toContain(".landing-skip-link:focus-visible");
+    expect(cssSource).not.toMatch(/\.landing-skip-link:focus\s*\{/);
+    expect(pageSource).toMatch(
+      /<main\s+id="main-content"\s+tabIndex=\{-1\}/,
+    );
+    expect(cssSource).toContain("env(safe-area-inset-left)");
+    expect(cssSource).toContain("env(safe-area-inset-right)");
+  });
+
   it("keeps the forbidden-claim guard wired to every marketing surface", () => {
     const scanContract = marketingTestSource.match(
       /const userFacingMarketingContent = \{([\s\S]*?)\n\};/,
@@ -74,10 +92,15 @@ describe("landing source invariants", () => {
     expect(cssSource).not.toMatch(/html\s*\{[^}]*scroll-behavior:\s*smooth/);
   });
 
-  it("does not put aria-label on generic div or span elements", () => {
+  it("does not add broad transitions to the redesigned landing", () => {
+    expect(pageSource).not.toContain("transition-all");
+    expect(cssSource).not.toMatch(/transition:\s*all\b/);
+  });
+
+  it("does not put accessible names on generic div or span elements", () => {
     const invalidLabels =
       pageSource.match(
-        /<(?:div|span)\b(?=[^>]*\baria-label=)(?![^>]*\brole=)[^>]*>/g,
+        /<(?:div|span)\b(?=[^>]*\baria-(?:label|labelledby)=)(?![^>]*\brole=)[^>]*>/g,
       ) ?? [];
 
     expect(invalidLabels).toEqual([]);

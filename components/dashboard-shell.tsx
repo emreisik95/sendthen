@@ -245,7 +245,7 @@ function WorkspaceMenu({
           <IconChevronUpDown className="shrink-0 text-fg-faint" />
         </summary>
         <div className="absolute left-0 right-0 top-full z-20 mt-1 overflow-hidden rounded-lg border border-line bg-surface-3 py-1 shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
-          <p className="px-3 py-1.5 text-xs font-medium text-fg-faint">
+          <p className="px-3 py-1.5 text-xs font-medium text-fg-muted">
             Workspaces
           </p>
           {membershipSummaries.map((membership) => {
@@ -317,7 +317,7 @@ function SetupCard({
       <div className="mb-2 flex items-start justify-between gap-2">
         <div>
           <p className="text-xs font-medium text-fg">Finish setup</p>
-          <p className="font-mono text-xs text-fg-faint">
+          <p className="font-mono text-xs text-fg-muted">
             {completedSteps}/3 complete
           </p>
         </div>
@@ -326,7 +326,7 @@ function SetupCard({
           <button
             type="submit"
             aria-label="Dismiss setup card"
-            className="flex h-10 w-10 items-center justify-center rounded-md text-lg leading-none text-fg-faint transition-colors hover:bg-surface-3 hover:text-fg"
+            className="flex h-10 w-10 items-center justify-center rounded-md text-lg leading-none text-fg-muted transition-colors hover:bg-surface-3 hover:text-fg"
           >
             ×
           </button>
@@ -371,21 +371,24 @@ function ResourceLinks({ onNavigate }: { onNavigate?: () => void }) {
       <Link
         href="/docs"
         target="_blank"
+        rel="noopener noreferrer"
         onClick={onNavigate}
-        className="nav-link flex min-h-10 items-center gap-3 rounded-md px-3 py-2 text-xs text-fg-faint transition-colors hover:bg-surface-2 hover:text-fg"
+        className="nav-link flex min-h-10 items-center gap-3 rounded-md px-3 py-2 text-xs text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg"
       >
         <IconBook className="shrink-0" width={14} height={14} />
         Documentation
+        <span className="sr-only"> (opens in a new tab)</span>
       </Link>
       <a
         href="https://github.com/emreisik95/sendthen"
         target="_blank"
         rel="noopener noreferrer"
         onClick={onNavigate}
-        className="nav-link flex min-h-10 items-center gap-3 rounded-md px-3 py-2 text-xs text-fg-faint transition-colors hover:bg-surface-2 hover:text-fg"
+        className="nav-link flex min-h-10 items-center gap-3 rounded-md px-3 py-2 text-xs text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg"
       >
         <IconGitHub className="shrink-0" width={14} height={14} />
         GitHub
+        <span className="sr-only"> (opens in a new tab)</span>
       </a>
     </div>
   );
@@ -417,7 +420,7 @@ function AccountMenu({
         <div className="absolute bottom-full left-0 right-0 z-20 mb-1 overflow-hidden rounded-lg border border-line bg-surface-3 py-1 shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
           <div className="border-b border-hairline px-3 py-2">
             <div className="truncate text-sm text-fg">{userSummary.name}</div>
-            <div className="truncate font-mono text-xs text-fg-faint">
+            <div className="truncate font-mono text-xs text-fg-muted">
               {userSummary.email}
             </div>
           </div>
@@ -474,7 +477,7 @@ function SidebarContent({
         membershipSummaries={membershipSummaries}
         onNavigate={onNavigate}
       />
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         <DashboardNavigation pathname={pathname} onNavigate={onNavigate} />
       </div>
       <SetupCard setup={setupSummary} onNavigate={onNavigate} />
@@ -517,7 +520,7 @@ export function DashboardShell({
     <>
       <a
         href="#main-content"
-        className="fixed left-4 top-4 z-[70] -translate-y-24 rounded-md bg-lime px-4 py-2 text-sm font-semibold text-on-lime transition-transform focus:translate-y-0 motion-reduce:transition-none"
+        className="fixed left-[max(1rem,env(safe-area-inset-left))] top-[max(1rem,env(safe-area-inset-top))] z-[70] -translate-y-24 rounded-md bg-lime px-4 py-2 text-sm font-semibold text-on-lime transition-transform focus-visible:translate-y-0 motion-reduce:transition-none"
       >
         Skip to main content
       </a>
@@ -530,7 +533,7 @@ export function DashboardShell({
         <div className="min-w-0 flex-1">
           <header className="sticky top-0 z-30 flex min-h-14 items-center justify-between gap-3 border-b border-line bg-surface/95 px-4 backdrop-blur-sm lg:hidden">
             <div className="min-w-0">
-              <p className="text-xs text-fg-faint">Workspace</p>
+              <p className="text-xs text-fg-muted">Workspace</p>
               <p className="truncate text-sm font-medium">{teamSummary.name}</p>
             </div>
             <button
@@ -564,7 +567,7 @@ export function DashboardShell({
         onCancel={handleDialogCancel}
         onClose={handleDialogClose}
         onClick={handleDialogBackdropClick}
-        className="fixed inset-y-0 left-0 m-0 h-dvh max-h-none w-[min(20rem,calc(100vw-3rem))] max-w-none overflow-hidden border-0 border-r border-line bg-surface p-0 text-fg shadow-[0_24px_80px_rgba(0,0,0,0.65)] backdrop:bg-black/70 lg:hidden"
+        className="fixed inset-y-0 left-0 m-0 h-dvh max-h-none w-[min(20rem,calc(100vw-3rem))] max-w-none overflow-hidden overscroll-contain border-0 border-r border-line bg-surface p-0 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] text-fg shadow-[0_24px_80px_rgba(0,0,0,0.65)] backdrop:bg-black/70 lg:hidden"
       >
         <div className="flex h-full min-h-0 flex-col">
           <div className="flex min-h-14 items-center justify-between border-b border-line px-3">

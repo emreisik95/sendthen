@@ -44,7 +44,7 @@ $ sendthen send --from "you <hello@yourdomain.com>" \\
 $ sendthen trace em_4kq0w2xr --watch
 09:31:04.012  queued     accepted via POST /api/v1/emails
 09:31:04.214  sent       250 2.0.0 OK
-09:31:04.220  delivered  recipient inbox confirmed`,
+09:31:04.220  delivered  delivery event recorded`,
   },
 ];
 

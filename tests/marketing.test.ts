@@ -66,6 +66,20 @@ const userFacingSourceFiles = [
       "utf8",
     ),
   },
+  {
+    path: "components/landing/trace.tsx",
+    source: readFileSync(
+      new URL("../components/landing/trace.tsx", import.meta.url),
+      "utf8",
+    ),
+  },
+  {
+    path: "components/landing/code-tabs.tsx",
+    source: readFileSync(
+      new URL("../components/landing/code-tabs.tsx", import.meta.url),
+      "utf8",
+    ),
+  },
 ] as const;
 
 function isSameOrSubdomain(hostname: string, rootHost: string): boolean {

@@ -8,7 +8,7 @@ const STATUS_COLORS: Record<string, string> = {
   queued: "text-info bg-info/14",
   sending: "text-info bg-info/14",
   pending: "text-warn bg-warn/14",
-  canceled: "text-fg-faint bg-fg-faint/14",
+  canceled: "text-fg-muted bg-fg-muted/14",
   bounced: "text-danger bg-danger/14",
   failed: "text-danger bg-danger/14",
 };
@@ -113,7 +113,7 @@ export function EmptyState({
 }
 
 export const inputCls =
-  "w-full rounded-md border border-line bg-surface px-3 py-2 text-sm text-fg placeholder:text-fg-faint focus:border-lime";
+  "w-full rounded-md border border-line bg-surface px-3 py-2 text-sm text-fg placeholder:text-fg-faint focus-visible:border-lime";
 
 export const btnPrimary =
   "inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-lime px-4 py-2 text-sm font-medium text-on-lime transition-colors hover:bg-lime-hover active:bg-lime-dim";

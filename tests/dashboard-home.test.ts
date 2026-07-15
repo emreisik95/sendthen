@@ -154,4 +154,13 @@ describe("dashboard Home server page", () => {
       expect(source).toContain(`href=\"${href}\"`);
     }
   });
+
+  it("keeps quota labels on the essential muted contrast token", () => {
+    expect(source).toMatch(
+      /<dt className="text-fg-muted">Today<\/dt>/,
+    );
+    expect(source).toMatch(
+      /<dt className="text-fg-muted">This month<\/dt>/,
+    );
+  });
 });

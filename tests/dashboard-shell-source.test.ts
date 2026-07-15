@@ -127,6 +127,17 @@ describe("dashboard shell source invariants", () => {
     );
   });
 
+  it("contains mobile drawer overscroll and respects device safe areas", () => {
+    const dialog = shellSource.match(/<dialog\b[\s\S]*?className="([^"]+)"/);
+
+    expect(dialog, "missing mobile navigation dialog").not.toBeNull();
+    const classes = dialog?.[1]?.split(/\s+/) ?? [];
+    expect(classes).toContain("overscroll-contain");
+    expect(classes).toContain("pt-[env(safe-area-inset-top)]");
+    expect(classes).toContain("pb-[env(safe-area-inset-bottom)]");
+    expect(classes).toContain("pl-[env(safe-area-inset-left)]");
+  });
+
   it("closes without focus restoration when the desktop breakpoint matches", () => {
     expect(lifecycleSource).toContain(
       'window.matchMedia("(min-width: 1024px)")',
@@ -195,6 +206,20 @@ describe("dashboard shell source invariants", () => {
     expect(shellSource).toContain('href="#main-content"');
     expect(shellSource).toMatch(/<main\b[^>]*id="main-content"/);
 
+    const skipLink = shellSource.match(
+      /href="#main-content"[\s\S]*?className="([^"]+)"/,
+    );
+    expect(skipLink, "missing dashboard skip link styles").not.toBeNull();
+    const skipClasses = skipLink?.[1]?.split(/\s+/) ?? [];
+    expect(skipClasses).toContain("focus-visible:translate-y-0");
+    expect(skipClasses).not.toContain("focus:translate-y-0");
+    expect(skipClasses).toContain(
+      "left-[max(1rem,env(safe-area-inset-left))]",
+    );
+    expect(skipClasses).toContain(
+      "top-[max(1rem,env(safe-area-inset-top))]",
+    );
+
     const main = shellSource.match(/<main\b[^>]*className="([^"]+)"/);
     expect(main, "missing dashboard main landmark").not.toBeNull();
     const classes = main?.[1]?.split(/\s+/) ?? [];
@@ -221,6 +246,17 @@ describe("dashboard shell source invariants", () => {
     expect(shellSource).toContain("action={logoutAction}");
     expect(shellSource).toContain("Manage workspace & members");
     expect(shellSource).not.toContain('href="/settings"');
+  });
+
+  it("keeps resource labels legible and announces new-tab behavior", () => {
+    const resources = shellSource.slice(
+      shellSource.indexOf("function ResourceLinks"),
+      shellSource.indexOf("function AccountMenu"),
+    );
+
+    expect(resources).toContain("text-fg-muted");
+    expect(resources).not.toMatch(/className="[^"]*text-fg-faint[^"]*"/);
+    expect(resources.match(/\(opens in a new tab\)/g)).toHaveLength(2);
   });
 
   it("bases setup completion on a verified domain, key, and first sent email", () => {
@@ -296,6 +332,17 @@ describe("dashboard server layout source invariants", () => {
 });
 
 describe("responsive shared UI source invariants", () => {
+  it("uses essential muted contrast for canceled delivery status", () => {
+    expect(uiSource).toMatch(
+      /canceled:\s*"text-fg-muted bg-fg-muted\/14"/,
+    );
+  });
+
+  it("uses visible-keyboard focus styling for shared inputs", () => {
+    expect(uiSource).toContain("focus-visible:border-lime");
+    expect(uiSource).not.toContain(" focus:border-lime");
+  });
+
   it("stacks PageHeader on narrow screens and wraps its actions", () => {
     expect(uiSource).toMatch(
       /mb-6 flex flex-col items-start[^"]*sm:flex-row[^"]*sm:items-center/,

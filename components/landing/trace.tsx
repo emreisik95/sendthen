@@ -38,7 +38,7 @@ const LINES: TraceLine[] = [
     time: "09:31:04.220",
     status: "delivered",
     color: "text-lime",
-    detail: "recipient inbox confirmed",
+    detail: "delivery event recorded",
   },
   {
     time: "09:31:04.226",

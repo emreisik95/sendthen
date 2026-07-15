@@ -124,7 +124,7 @@ export default function Landing() {
         </nav>
       </header>
 
-      <main id="main-content">
+      <main id="main-content" tabIndex={-1}>
         <section
           className="landing-hero relative py-[clamp(4rem,8vw,7.5rem)]"
           aria-labelledby="hero-heading"
@@ -389,7 +389,7 @@ export default function Landing() {
               </div>
             </div>
 
-            <div className="mt-8" aria-labelledby="sources-heading">
+            <section className="mt-8" aria-labelledby="sources-heading">
               <h3 id="sources-heading" className="font-mono text-[0.75rem] font-semibold uppercase tracking-[0.12em] text-[var(--landing-text-secondary)]">
                 Official sources
               </h3>
@@ -411,7 +411,7 @@ export default function Landing() {
                   </article>
                 ))}
               </div>
-            </div>
+            </section>
           </div>
         </section>
 
