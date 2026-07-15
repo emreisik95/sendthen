@@ -3,16 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  useCallback,
   useEffect,
   useId,
-  useRef,
   useState,
   type ComponentType,
-  type MouseEvent as ReactMouseEvent,
   type ReactNode,
   type SVGProps,
-  type SyntheticEvent,
 } from "react";
 import {
   completeOnboardingAction,
@@ -47,6 +43,7 @@ import {
   IconUsers,
   IconWebhook,
 } from "@/components/nav-icons";
+import { useMobileNavigationDialog } from "@/components/use-mobile-navigation-dialog";
 
 type DashboardShellProps = Readonly<{
   children: ReactNode;
@@ -495,118 +492,18 @@ export function DashboardShell({
   setupSummary,
 }: DashboardShellProps) {
   const pathname = usePathname();
-  const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
-  const dialogRef = useRef<HTMLDialogElement>(null);
-  const menuButtonRef = useRef<HTMLButtonElement>(null);
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const restoreFocusAfterCloseRef = useRef(false);
-  const previousPathnameRef = useRef(pathname);
-
-  const closeMobileNavigation = useCallback((restoreFocus: boolean) => {
-    restoreFocusAfterCloseRef.current = restoreFocus;
-    setMobileNavigationOpen(false);
-  }, []);
-
-  const dismissMobileNavigation = useCallback(() => {
-    closeMobileNavigation(true);
-  }, [closeMobileNavigation]);
-
-  const closeMobileNavigationWithoutFocus = useCallback(() => {
-    closeMobileNavigation(false);
-  }, [closeMobileNavigation]);
-
-  const openMobileNavigation = useCallback(() => {
-    restoreFocusAfterCloseRef.current = false;
-    setMobileNavigationOpen(true);
-  }, []);
-
-  const handleDialogCancel = useCallback(
-    (event: SyntheticEvent<HTMLDialogElement>) => {
-      event.preventDefault();
-      dismissMobileNavigation();
-    },
-    [dismissMobileNavigation],
-  );
-
-  const handleDialogBackdropClick = useCallback(
-    (event: ReactMouseEvent<HTMLDialogElement>) => {
-      if (event.target === event.currentTarget) dismissMobileNavigation();
-    },
-    [dismissMobileNavigation],
-  );
-
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-
-    if (mobileNavigationOpen) {
-      if (!dialog.open) dialog.showModal();
-      closeButtonRef.current?.focus();
-    } else if (dialog.open) {
-      dialog.close();
-    }
-  }, [mobileNavigationOpen]);
-
-  useEffect(() => {
-    if (!mobileNavigationOpen) return;
-
-    const previousDocumentOverflow =
-      document.documentElement.style.overflow;
-    const previousBodyOverflow = document.body.style.overflow;
-    document.documentElement.style.overflow = "hidden";
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.documentElement.style.overflow = previousDocumentOverflow;
-      document.body.style.overflow = previousBodyOverflow;
-
-      const shouldRestoreFocus = restoreFocusAfterCloseRef.current;
-      restoreFocusAfterCloseRef.current = false;
-      if (shouldRestoreFocus) {
-        const closingPathname = pathname;
-        requestAnimationFrame(() => {
-          const desktopNavigationVisible = window.matchMedia(
-            "(min-width: 1024px)",
-          ).matches;
-          if (
-            !desktopNavigationVisible &&
-            previousPathnameRef.current === closingPathname
-          ) {
-            menuButtonRef.current?.focus();
-          }
-        });
-      }
-    };
-  }, [mobileNavigationOpen, pathname]);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(min-width: 1024px)");
-    const handleBreakpointChange = (event: MediaQueryListEvent) => {
-      if (event.matches) closeMobileNavigation(false);
-    };
-
-    if (mediaQuery.matches) closeMobileNavigation(false);
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", handleBreakpointChange);
-      return () =>
-        mediaQuery.removeEventListener("change", handleBreakpointChange);
-    }
-
-    mediaQuery.addListener(handleBreakpointChange);
-    return () => mediaQuery.removeListener(handleBreakpointChange);
-  }, [closeMobileNavigation]);
-
-  useEffect(() => {
-    if (previousPathnameRef.current !== pathname) {
-      previousPathnameRef.current = pathname;
-      closeMobileNavigation(false);
-    }
-  }, [closeMobileNavigation, pathname]);
-
-  const handleDialogClose = useCallback(() => {
-    setMobileNavigationOpen(false);
-  }, []);
+  const {
+    mobileNavigationOpen,
+    dialogRef,
+    menuButtonRef,
+    closeButtonRef,
+    openMobileNavigation,
+    dismissMobileNavigation,
+    closeMobileNavigationWithoutFocus,
+    handleDialogCancel,
+    handleDialogBackdropClick,
+    handleDialogClose,
+  } = useMobileNavigationDialog({ pathname });
 
   const sidebarProps = {
     userSummary,

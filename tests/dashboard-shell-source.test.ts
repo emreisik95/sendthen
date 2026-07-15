@@ -11,6 +11,8 @@ const shellFile = new URL(
   import.meta.url,
 );
 const shellSource = readSource("components/dashboard-shell.tsx");
+const hookSource = readSource("components/use-mobile-navigation-dialog.ts");
+const lifecycleSource = `${shellSource}\n${hookSource}`;
 const layoutSource = readSource("app/(dash)/layout.tsx");
 const uiSource = readSource("components/ui.tsx");
 const navigationSource = readSource("lib/dashboard-nav.ts");
@@ -85,15 +87,15 @@ describe("dashboard shell source invariants", () => {
     expect(shellSource).toContain('aria-label="Open navigation"');
     expect(shellSource).toMatch(/<dialog\b/);
     expect(shellSource).toContain("ref={dialogRef}");
-    expect(shellSource).toContain("dialog.showModal()");
+    expect(lifecycleSource).toContain("dialog.showModal()");
     expect(shellSource).not.toContain('role="dialog"');
     expect(shellSource).toContain('aria-modal="true"');
     expect(shellSource).toContain('aria-label="Dashboard navigation"');
     expect(shellSource).toContain('aria-label="Close navigation"');
     expect(shellSource).toContain("onCancel={handleDialogCancel}");
-    expect(shellSource).toContain("event.preventDefault()");
+    expect(lifecycleSource).toContain("event.preventDefault()");
     expect(shellSource).toContain("onClick={handleDialogBackdropClick}");
-    expect(shellSource).toContain("event.target === event.currentTarget");
+    expect(lifecycleSource).toContain("event.target === event.currentTarget");
     expect(shellSource).toContain(
       "onNavigate={closeMobileNavigationWithoutFocus}",
     );
@@ -102,42 +104,46 @@ describe("dashboard shell source invariants", () => {
   it("moves focus into the drawer and returns it to the opener", () => {
     expect(shellSource).toContain("menuButtonRef");
     expect(shellSource).toContain("closeButtonRef");
-    expect(shellSource).toMatch(/closeButtonRef\.current\?\.focus\(\)/);
-    expect(shellSource).toMatch(/menuButtonRef\.current\?\.focus\(\)/);
+    expect(lifecycleSource).toMatch(/closeButtonRef\.current\?\.focus\(\)/);
+    expect(lifecycleSource).toContain('request.target === "opener"');
+    expect(lifecycleSource).toContain("menuButtonRef.current");
+    expect(lifecycleSource).toContain("target?.focus({ preventScroll: true })");
   });
 
   it("restores document scrolling after every modal lifecycle", () => {
-    expect(shellSource).toContain("const previousDocumentOverflow");
-    expect(shellSource).toContain("const previousBodyOverflow");
-    expect(shellSource).toContain(
+    expect(lifecycleSource).toContain("const previousDocumentOverflow");
+    expect(lifecycleSource).toContain("const previousBodyOverflow");
+    expect(lifecycleSource).toContain(
       'document.documentElement.style.overflow = "hidden"',
     );
-    expect(shellSource).toContain('document.body.style.overflow = "hidden"');
-    expect(shellSource).toContain(
+    expect(lifecycleSource).toContain(
+      'document.body.style.overflow = "hidden"',
+    );
+    expect(lifecycleSource).toContain(
       "document.documentElement.style.overflow = previousDocumentOverflow",
     );
-    expect(shellSource).toContain(
+    expect(lifecycleSource).toContain(
       "document.body.style.overflow = previousBodyOverflow",
     );
   });
 
   it("closes without focus restoration when the desktop breakpoint matches", () => {
-    expect(shellSource).toContain(
+    expect(lifecycleSource).toContain(
       'window.matchMedia("(min-width: 1024px)")',
     );
-    expect(shellSource).toMatch(
-      /if \(event\.matches\)[\s\S]{0,100}closeMobileNavigation\(false\)/,
+    expect(lifecycleSource).toMatch(
+      /type: "breakpoint"[\s\S]{0,100}desktop: event\.matches/,
     );
-    expect(shellSource).toContain(
+    expect(lifecycleSource).toContain(
       'mediaQuery.addEventListener("change", handleBreakpointChange)',
     );
-    expect(shellSource).toContain(
+    expect(lifecycleSource).toContain(
       'mediaQuery.removeEventListener("change", handleBreakpointChange)',
     );
-    expect(shellSource).toContain(
+    expect(lifecycleSource).toContain(
       "mediaQuery.addListener(handleBreakpointChange)",
     );
-    expect(shellSource).toContain(
+    expect(lifecycleSource).toContain(
       "mediaQuery.removeListener(handleBreakpointChange)",
     );
   });
@@ -148,22 +154,41 @@ describe("dashboard shell source invariants", () => {
     );
 
     expect(shellComponent).toContain("const pathname = usePathname()");
-    expect(shellComponent).toContain("previousPathnameRef");
-    expect(shellComponent).toMatch(
-      /previousPathnameRef\.current !== pathname[\s\S]{0,180}closeMobileNavigation\(false\)/,
+    expect(lifecycleSource).toMatch(
+      /type: "pathname"[\s\S]{0,100}pathname/,
     );
     expect(shellSource).toContain('key={`desktop-${pathname}`}');
     expect(shellSource).toContain('key={`mobile-${pathname}`}');
   });
 
   it("restores opener focus only for explicit user dismissals", () => {
-    expect(shellSource).toMatch(
-      /dismissMobileNavigation[\s\S]{0,160}closeMobileNavigation\(true\)/,
+    expect(lifecycleSource).toMatch(
+      /dismissMobileNavigation[\s\S]{0,160}type: "dismiss"/,
     );
-    expect(shellSource).toMatch(
-      /closeMobileNavigationWithoutFocus[\s\S]{0,160}closeMobileNavigation\(false\)/,
+    expect(lifecycleSource).toMatch(
+      /closeMobileNavigationWithoutFocus[\s\S]{0,160}type: "navigate"/,
     );
     expect(shellSource).toContain("onClick={dismissMobileNavigation}");
+  });
+
+  it("delegates lifecycle policy to a hook and invalidates stale focus frames", () => {
+    expect(shellSource).toContain(
+      'from "@/components/use-mobile-navigation-dialog"',
+    );
+    expect(shellSource).toContain("useMobileNavigationDialog({ pathname })");
+    expect(hookSource.trimStart()).toMatch(/^"use client";/);
+    expect(hookSource).toContain("transitionDashboardDrawer");
+    expect(hookSource).toContain("pendingFocusAnimationFrameRef");
+    expect(hookSource).toContain("cancelPendingFocusAnimationFrame");
+    expect(hookSource).toContain("cancelAnimationFrame(");
+    expect(hookSource).toContain(
+      "isDashboardDrawerFocusRequestCurrent",
+    );
+    expect(hookSource).toMatch(
+      /dialogRef\.current\?\.open[\s\S]{0,160}isDashboardDrawerFocusRequestCurrent/,
+    );
+    expect(hookSource).toContain('document.getElementById("main-content")');
+    expect(hookSource).toContain('type: "unmount"');
   });
 
   it("offers a skip target and a shrinkable, responsively padded main region", () => {
