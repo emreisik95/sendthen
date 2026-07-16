@@ -159,6 +159,7 @@ POST /api/v1/emails ──► queue (SQLite) ──► DKIM sign ──► trans
 
 ```bash
 pnpm test              # unit and source-invariant tests (vitest)
+pnpm test:builder:e2e  # isolated browser test for builder drag, history, and focus
 ```
 
 End-to-end (37 checks: auth, domains + DKIM, single/batch/template sends, idempotency, suppressions, tracking, webhook signatures, broadcast fan-out, unsubscribe, inbound):

@@ -7,10 +7,13 @@
     "build": "next build",
     "start": "next start",
     "test": "vitest run",
+    "test:builder:e2e": "node scripts/builder-ui-e2e.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
     "better-sqlite3": "^12.11.1",
     "drizzle-orm": "^0.45.2",
     "mailparser": "^3.9.12",
